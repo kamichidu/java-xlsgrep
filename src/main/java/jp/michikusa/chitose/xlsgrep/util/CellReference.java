@@ -12,26 +12,26 @@ import org.apache.poi.ss.usermodel.Sheet;
 @ToString
 public class CellReference
 {
-	public CellReference(@NonNull Sheet sheet, int rownum, int cellnum)
-	{
-		this.sheet= sheet;
-		this.rownum= rownum;
-		this.cellnum= cellnum;
-	}
+    public CellReference(@NonNull Sheet sheet, int rownum, int cellnum)
+    {
+        this.sheet= sheet;
+        this.rownum= rownum;
+        this.cellnum= cellnum;
+    }
 
-	public CellReference(@NonNull Cell cell)
-	{
-		this.sheet= cell.getSheet();
-		this.rownum= cell.getRowIndex();
-		this.cellnum= cell.getColumnIndex();
-	}
+    public CellReference(@NonNull Cell cell)
+    {
+        this.sheet= cell.getSheet();
+        this.rownum= cell.getRowIndex();
+        this.cellnum= cell.getColumnIndex();
+    }
 
-	@Getter @NonNull
-	private final Sheet sheet;
+    @Getter @NonNull
+    private final Sheet sheet;
 
-	@Getter
-	private final int rownum;
-	
-	@Getter
-	private final int cellnum;
+    @Getter
+    private final int rownum;
+
+    @Getter
+    private final int cellnum;
 }

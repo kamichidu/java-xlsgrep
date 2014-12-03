@@ -8,5 +8,5 @@ import lombok.NonNull;
 
 public interface Matcher
 {
-	Stream<MatchResult> matches(Pattern pattern);
+    Stream<MatchResult> matches(Pattern pattern);
 }

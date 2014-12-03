@@ -22,74 +22,74 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 
 public class CellCommentMatcher
-	implements Matcher
+    implements Matcher
 {
-	public CellCommentMatcher(@NonNull Workbook workbook)
-	{
-		this.workbook= workbook;
-	}
+    public CellCommentMatcher(@NonNull Workbook workbook)
+    {
+        this.workbook= workbook;
+    }
 
-	@Override
-	public Stream<MatchResult> matches(@NonNull Pattern pattern) {
-		 Spliterator<MatchResult> spliterator= cells(this.workbook)
-			.filter((CellComment c) -> this.match(c, pattern))
-			.map(this::makeResult)
-			.spliterator()
-		;
-		 return StreamSupport.stream(spliterator, true);
-	}
+    @Override
+    public Stream<MatchResult> matches(@NonNull Pattern pattern) {
+         Spliterator<MatchResult> spliterator= cells(this.workbook)
+            .filter((CellComment c) -> this.match(c, pattern))
+            .map(this::makeResult)
+            .spliterator()
+        ;
+         return StreamSupport.stream(spliterator, true);
+    }
 
-	@RequiredArgsConstructor
-	private static final class CellComment
-	{
-		@Getter
-		private final Sheet sheet;
+    @RequiredArgsConstructor
+    private static final class CellComment
+    {
+        @Getter
+        private final Sheet sheet;
 
-		@Getter @NonNull
-		private final Comment comment;
-	}
+        @Getter @NonNull
+        private final Comment comment;
+    }
 
-	private static Stream<CellComment> cells(@NonNull Workbook workbook)
-	{
-		return StreamTaker.sheets(workbook)
-			.map(CellCommentMatcher::gatherComments)
-			.reduce(Stream::concat)
-			.orElse(Stream.empty())
-		;
-	}
+    private static Stream<CellComment> cells(@NonNull Workbook workbook)
+    {
+        return StreamTaker.sheets(workbook)
+            .map(CellCommentMatcher::gatherComments)
+            .reduce(Stream::concat)
+            .orElse(Stream.empty())
+        ;
+    }
 
-	private static Stream<CellComment> gatherComments(@NonNull Sheet sheet)
-	{
-		if(sheet.getPhysicalNumberOfRows() <= 0)
-		{
-			return Stream.empty();
-		}
+    private static Stream<CellComment> gatherComments(@NonNull Sheet sheet)
+    {
+        if(sheet.getPhysicalNumberOfRows() <= 0)
+        {
+            return Stream.empty();
+        }
 
-		final int maxNumOfColumns= (sheet instanceof XSSFSheet) ? 16384 : 256;
-		return StreamTaker.rows(sheet)
-			.map((Row r) -> {
-				return IntStream.range(0, maxNumOfColumns)
-					.mapToObj((int cellnum) -> Optional.ofNullable(sheet.getCellComment(r.getRowNum(), cellnum)))
-					.filter((Optional<Comment> c) -> c.isPresent())
-					.map((Optional<Comment> c) -> new CellComment(sheet, c.get()))
-				;
-			})
-			.reduce(Stream::concat)
-			.orElse(Stream.empty())
-		;
-	}
+        final int maxNumOfColumns= (sheet instanceof XSSFSheet) ? 16384 : 256;
+        return StreamTaker.rows(sheet)
+            .map((Row r) -> {
+                return IntStream.range(0, maxNumOfColumns)
+                    .mapToObj((int cellnum) -> Optional.ofNullable(sheet.getCellComment(r.getRowNum(), cellnum)))
+                    .filter((Optional<Comment> c) -> c.isPresent())
+                    .map((Optional<Comment> c) -> new CellComment(sheet, c.get()))
+                ;
+            })
+            .reduce(Stream::concat)
+            .orElse(Stream.empty())
+        ;
+    }
 
-	private boolean match(@NonNull CellComment comment, @NonNull Pattern pattern)
-	{
-		return pattern.matcher(comment.getComment().getString().getString()).find();
-	}
+    private boolean match(@NonNull CellComment comment, @NonNull Pattern pattern)
+    {
+        return pattern.matcher(comment.getComment().getString().getString()).find();
+    }
 
-	private MatchResult makeResult(@NonNull CellComment comment)
-	{
-		final CellReference ref= new CellReference(comment.getSheet(), comment.getComment().getRow(), comment.getComment().getColumn());
+    private MatchResult makeResult(@NonNull CellComment comment)
+    {
+        final CellReference ref= new CellReference(comment.getSheet(), comment.getComment().getRow(), comment.getComment().getColumn());
 
-		return new MatchResult(ref);
-	}
+        return new MatchResult(ref);
+    }
 
-	private final Workbook workbook;
+    private final Workbook workbook;
 }

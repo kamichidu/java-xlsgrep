@@ -13,21 +13,21 @@ import org.apache.poi.ss.usermodel.Cell;
 @ToString
 public class MatchResult
 {
-	public MatchResult(@NonNull CellReference ref)
-	{
-		this.cellRef= ref;
-	}
+    public MatchResult(@NonNull CellReference ref)
+    {
+        this.cellRef= ref;
+    }
 
-	public CharSequence getSheetName()
-	{
-		return this.cellRef.getSheet().getSheetName();
-	}
+    public CharSequence getSheetName()
+    {
+        return this.cellRef.getSheet().getSheetName();
+    }
 
-	public CharSequence getCellAddress()
-	{
-		return Addresses.A1.format(this.cellRef.getRownum(), this.cellRef.getCellnum());
-	}
+    public CharSequence getCellAddress()
+    {
+        return Addresses.A1.format(this.cellRef.getRownum(), this.cellRef.getCellnum());
+    }
 
-	@Getter
-	private final CellReference cellRef;
+    @Getter
+    private final CellReference cellRef;
 }

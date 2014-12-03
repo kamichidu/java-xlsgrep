@@ -4,15 +4,15 @@ import lombok.Getter;
 
 @SuppressWarnings("serial")
 public class NoSuchMatcherException
-	extends IllegalArgumentException
+    extends IllegalArgumentException
 {
-	public NoSuchMatcherException(CharSequence name)
-	{
-		super(String.format("No such matcher: `%s'", name));
+    public NoSuchMatcherException(CharSequence name)
+    {
+        super(String.format("No such matcher: `%s'", name));
 
-		this.matcherName= name;
-	}
+        this.matcherName= name;
+    }
 
-	@Getter
-	private final CharSequence matcherName;
+    @Getter
+    private final CharSequence matcherName;
 }
