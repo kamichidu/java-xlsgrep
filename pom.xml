@@ -146,12 +146,12 @@
             <scope>compile</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>[18,)</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- <dependency> -->
+        <!--     <groupId>com.google.guava</groupId> -->
+        <!--     <artifactId>guava</artifactId> -->
+        <!--     <version>[18,)</version> -->
+        <!--     <scope>compile</scope> -->
+        <!-- </dependency> -->
 
         <dependency>
             <groupId>org.projectlombok</groupId>
