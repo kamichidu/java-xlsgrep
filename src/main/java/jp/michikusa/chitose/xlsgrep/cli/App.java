@@ -1,8 +1,16 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
+import java.io.Console;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.PushbackInputStream;
+import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -11,6 +19,8 @@ import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import lombok.NonNull;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.kohsuke.args4j.CmdLineException;
@@ -37,10 +47,10 @@ public class App
             System.exit(1);
         }
 
-        final App app= new App(option);
+        final App app= new App(option, System.in, System.out, System.err);
         try
         {
-            app.start(System.in, System.out, System.err);
+            app.start();
         }
         catch(Exception e)
         {
@@ -49,56 +59,116 @@ public class App
         }
     }
 
-    public App(@NonNull AppOption option)
+    public App(@NonNull AppOption option, @NonNull InputStream in, @NonNull OutputStream out, @NonNull OutputStream err)
     {
         this.option= option;
+        this.in= new InputStreamReader(in, Charset.defaultCharset());
+        this.out= new PrintWriter(out);
+        this.err= new PrintWriter(err);
     }
 
-    public void start(InputStream in, OutputStream out, OutputStream err)
+    public void start()
     {
         final Function<Workbook, Matcher> matcherProvider= this.option.getMatcher();
 
-        this.option.getPaths()
-            .filter((Path p) -> { return p.toFile().exists(); })
-            .forEachOrdered((Path p) -> {
-                try(Workbook workbook= WorkbookFactory.create(p.toFile()))
-                {
-                    final Matcher matcher= matcherProvider.apply(workbook);
-                    final Stream<MatchResult> matched= matcher.matches(this.option.getPattern());
-
-                    matched.forEachOrdered((MatchResult r) -> {
-                        try
-                        {
-                            final StringBuilder buffer= new StringBuilder();
-
-                            buffer.append(p.toFile().getAbsolutePath());
-                            buffer.append(":");
-                            buffer.append(r.getSheetName());
-                            buffer.append(":");
-                            buffer.append(r.getCellAddress());
-                            buffer.append("\n");
-
-                            out.write(buffer.toString().getBytes());
-                        }
-                        catch(IOException e)
-                        {
-                            throw new IllegalStateException(e);
-                        }
-                        catch(Exception e)
-                        {
-                            logger.error("Something wrong.", e);
-                        }
-                    });
-                }
-                catch(Exception e)
-                {
-                    logger.error("Something wrong.", e);
-                }
-            })
+        final Stream<Path> paths= this.option.getPaths()
+            .map(this::files)
+            .reduce(Stream::concat)
+            .orElse(Stream.empty())
         ;
+
+        paths.forEachOrdered((Path p) -> {
+            try(
+                final InputStream origIn= new FileInputStream(p.toFile());
+                final InputStream fileIn= new PushbackInputStream(origIn, 1024);
+            )
+            {
+                if(!NPOIFSFileSystem.hasPOIFSHeader(fileIn))
+                {
+                    this.err.format("`%s' is not an Excel file.%n", p.toFile().getAbsolutePath());
+                    this.err.flush();
+                    return;
+                }
+
+                final Workbook workbook;
+                try
+                {
+                    workbook= WorkbookFactory.create(fileIn);
+                }
+                catch(InvalidFormatException | IllegalArgumentException e)
+                {
+                    this.err.format("`%s' is not an Excel file.%n", p.toFile().getAbsolutePath());
+                    this.err.flush();
+                    return;
+                }
+
+                final Matcher matcher= matcherProvider.apply(workbook);
+                final Stream<MatchResult> matched= matcher.matches(this.option.getPattern());
+
+                matched.forEachOrdered((MatchResult r) -> {
+                    try
+                    {
+                        this.out.format("%s:%s:%s%n", p.toFile().getAbsolutePath(), r.getSheetName(), r.getCellAddress());
+                        this.out.flush();
+                    }
+                    catch(Exception e)
+                    {
+                        logger.error("Something wrong.", e);
+                    }
+                });
+            }
+            catch(Exception e)
+            {
+                logger.error("Something wrong.", e);
+            }
+        });
+    }
+
+    private Stream<Path> files(@NonNull Path path)
+    {
+        if(!path.toFile().exists())
+        {
+            this.err.format("`%s' couldn't be found.%n", path.toFile().getAbsolutePath());
+            this.err.flush();
+            return Stream.empty();
+        }
+        if(path.toFile().isDirectory())
+        {
+            if(!this.option.isRecurse())
+            {
+                this.err.format("`%s' is a directory.%n", path.toFile().getAbsolutePath());
+                this.err.flush();
+                return Stream.empty();
+            }
+
+            final File[] children= path.toFile().listFiles();
+            if(children == null)
+            {
+                this.err.format("`%s' couldn't be opened.%n", path.toFile().getAbsolutePath());
+                this.err.flush();
+                return Stream.empty();
+            }
+
+            return Stream.of(children)
+                .map((File f) -> { return f.toPath(); })
+                .map(this::files)
+                .reduce(Stream::concat)
+                .orElse(Stream.empty())
+            ;
+        }
+        else
+        {
+            return Stream.of(path);
+        }
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
 
     private final AppOption option;
+
+    private final Reader in;
+
+    private final PrintWriter out;
+
+    private final PrintWriter err;
 }
