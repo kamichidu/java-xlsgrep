@@ -56,7 +56,7 @@ public class ExWorkbook
     @Override
     public void setFirstVisibleTab(int sheetIndex)
     {
-        return this.delegate.setFirstVisibleTab(sheetIndex);
+        this.delegate.setFirstVisibleTab(sheetIndex);
     }
 
     @Override
@@ -134,13 +134,13 @@ public class ExWorkbook
     @Override
     public void removeSheetAt(int index)
     {
-        return this.delegate.removeSheetAt(index);
+        this.delegate.removeSheetAt(index);
     }
 
     @Override
     public void setRepeatingRowsAndColumns(int sheetIndex, int startColumn, int endColumn, int startRow, int endRow)
     {
-        return this.delegate.setRepeatingRowsAndColumns(sheetIndex, startColumn, endColumn, startRow, endRow);
+        this.delegate.setRepeatingRowsAndColumns(sheetIndex, startColumn, endColumn, startRow, endRow);
     }
 
     @Override
