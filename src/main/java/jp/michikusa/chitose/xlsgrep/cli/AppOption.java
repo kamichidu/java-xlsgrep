@@ -39,7 +39,14 @@ public class AppOption
 
     public Pattern getPattern()
     {
-        return Pattern.compile(this.pattern);
+        if(this.useRegex)
+        {
+            return Pattern.compile(this.pattern);
+        }
+        else
+        {
+            return Pattern.compile(Pattern.quote(this.pattern));
+        }
     }
 
     public Stream<Path> getPaths() {
@@ -47,11 +54,14 @@ public class AppOption
     }
 
     @Getter
-    @Option(name= "--recurse", aliases= "-R", usage= "Search files recursively")
+    @Option(name= "--recurse", aliases= "-R", usage= "Search files recursively (Default: false)")
     private boolean recurse;
 
     @Option(name= "--matcher", aliases= "-m", usage= "Specify matcher for cell text or formula, or else (Available: 'text', 'comment', 'shape')")
     private String matcher= "text";
+
+    @Option(name= "--regex", aliases= "-r", usage= "{pattern} is a Java regular expression (Default: false)")
+    private boolean useRegex= false;
 
     @Argument(index= 0, required= true)
     private String pattern;
