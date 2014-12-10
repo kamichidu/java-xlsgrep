@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.NoSuchMatcherException;
 import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
+import jp.michikusa.chitose.xlsgrep.matcher.CellFormulaMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
@@ -35,6 +36,8 @@ public class AppOption
                 return (Workbook workbook) -> new ShapeMatcher(workbook);
             case "sheet":
                 return (Workbook workbook) -> new SheetNameMatcher(workbook);
+            case "formula":
+                return (Workbook workbook) -> new CellFormulaMatcher(workbook);
             default:
                 throw new NoSuchMatcherException(this.matcher);
         }
