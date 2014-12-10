@@ -1,6 +1,5 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,11 +11,11 @@ import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
+
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -34,10 +33,11 @@ public class App
     {
         final AppOption option= new AppOption();
         final CmdLineParser parser= new CmdLineParser(option);
-        try {
+        try
+        {
             parser.parseArgument(args);
         }
-        catch (CmdLineException e)
+        catch(CmdLineException e)
         {
             System.err.println("Usage: xlsgrep [options] {pattern} [{path} ...]");
             System.err.println();
@@ -69,59 +69,25 @@ public class App
 
     public void start()
     {
-        final Function<Workbook, Matcher> matcherProvider= this.option.getMatcher();
-
         final Stream<Path> paths= this.option.getPaths()
             .map(this::files)
             .reduce(Stream::concat)
             .orElse(Stream.empty())
         ;
 
-        paths.forEachOrdered((Path p) -> {
-            try(
-                final InputStream origIn= new FileInputStream(p.toFile());
-                final InputStream fileIn= new PushbackInputStream(origIn, 1024);
-            )
-            {
-                if(!NPOIFSFileSystem.hasPOIFSHeader(fileIn))
-                {
-                    this.err.format("`%s' is not an Excel file.%n", p.toFile().getAbsolutePath());
-                    this.err.flush();
-                    return;
-                }
+        final Stream<MatchResult> matches= paths
+            .map(this::matches)
+            .reduce(Stream::concat)
+            .orElse(Stream.empty())
+        ;
 
-                final Workbook workbook;
-                try
-                {
-                    workbook= WorkbookFactory.create(fileIn);
-                }
-                catch(InvalidFormatException | IllegalArgumentException e)
-                {
-                    this.err.format("`%s' is not an Excel file.%n", p.toFile().getAbsolutePath());
-                    this.err.flush();
-                    return;
-                }
-
-                final Matcher matcher= matcherProvider.apply(workbook);
-                final Stream<MatchResult> matched= matcher.matches(this.option.getPattern());
-
-                matched.forEachOrdered((MatchResult r) -> {
-                    try
-                    {
-                        this.out.format("%s:%s:%s%n", p.toFile().getAbsolutePath(), r.getSheetName(), r.getCellAddress());
-                        this.out.flush();
-                    }
-                    catch(Exception e)
-                    {
-                        logger.error("Something wrong.", e);
-                    }
-                });
-            }
-            catch(Exception e)
-            {
-                logger.error("Something wrong.", e);
-            }
-        });
+        matches
+            .map(this::format)
+            .forEach((CharSequence msg) -> {
+                this.out.write(msg.toString());
+                this.out.flush();
+            })
+        ;
     }
 
     private Stream<Path> files(@NonNull Path path)
@@ -160,6 +126,44 @@ public class App
         {
             return Stream.of(path);
         }
+    }
+
+    private Stream<MatchResult> matches(@NonNull Path path)
+    {
+        try(final Workbook workbook= WorkbookFactory.create(path.toFile()))
+        {
+            final Matcher matcher= this.option.getMatcher().apply(workbook);
+            final Stream<MatchResult> matches= matcher.matches(this.option.getPattern());
+            return matches.map((MatchResult r) -> {
+                r.setFilepath(path);
+                return r;
+            });
+        }
+        catch(InvalidFormatException | IllegalArgumentException | IOException e)
+        {
+            this.err.format("`%s' is not an Excel file.%n", path.toFile().getAbsolutePath());
+            this.err.flush();
+            return Stream.empty();
+        }
+        catch(Exception e)
+        {
+            logger.error("Something wrong.", e);
+            return Stream.empty();
+        }
+    }
+
+    private CharSequence format(@NonNull MatchResult data)
+    {
+        final CharSequence filename= data.getFilepath().isPresent()
+            ? data.getFilepath().get().toFile().getAbsolutePath()
+            : "<<<Unknown>>>"
+        ;
+
+        return String.format("%s:%s:%s%n",
+            filename,
+            data.getSheetName(),
+            data.getCellAddress()
+        );
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
