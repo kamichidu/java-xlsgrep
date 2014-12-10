@@ -11,6 +11,8 @@ import jp.michikusa.chitose.xlsgrep.NoSuchMatcherException;
 import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
+import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
+
 import lombok.Getter;
 
 import org.apache.poi.ss.usermodel.Workbook;
@@ -28,6 +30,8 @@ public class AppOption
                 return (Workbook workbook) -> new CellTextMatcher(workbook);
             case "comment":
                 return (Workbook workbook) -> new CellCommentMatcher(workbook);
+            case "shape":
+                return (Workbook workbook) -> new ShapeMatcher(workbook);
             default:
                 throw new NoSuchMatcherException(this.matcher);
         }
@@ -46,7 +50,7 @@ public class AppOption
     @Option(name= "--recurse", aliases= "-R", usage= "Search files recursively")
     private boolean recurse;
 
-    @Option(name= "--matcher", aliases= "-m", usage= "Specify matcher for cell text or formula, or else (Available: 'text', 'comment')")
+    @Option(name= "--matcher", aliases= "-m", usage= "Specify matcher for cell text or formula, or else (Available: 'text', 'comment', 'shape')")
     private String matcher= "text";
 
     @Argument(index= 0, required= true)
