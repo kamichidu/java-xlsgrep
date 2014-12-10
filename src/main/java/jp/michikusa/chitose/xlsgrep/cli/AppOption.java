@@ -2,6 +2,7 @@ package jp.michikusa.chitose.xlsgrep.cli;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -14,7 +15,7 @@ import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
-
+import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
 import lombok.Getter;
 
 import org.apache.poi.ss.usermodel.Workbook;
@@ -59,6 +60,11 @@ public class AppOption
         return Arrays.stream(this.paths).map(Paths::get);
     }
 
+    public String getReportFormat()
+    {
+        return this.format;
+    }
+
     @Getter
     @Option(name= "--recurse", aliases= "-R", usage= "Search files recursively (Default: false)")
     private boolean recurse;
@@ -68,6 +74,16 @@ public class AppOption
 
     @Option(name= "--regex", aliases= "-r", usage= "{pattern} is a Java regular expression (Default: false)")
     private boolean useRegex= false;
+
+    @Option(
+        name= "--format",
+        aliases= "-f",
+        usage= "Specify reporting format\n" +
+               "    {filename} - The filename\n" +
+               "    {sheet}    - The sheet name\n" +
+               "    {cell}     - The cell address\n"
+    )
+    private String format= "{filename}:{sheet}:{cell}";
 
     @Argument(index= 0, required= true)
     private String pattern;

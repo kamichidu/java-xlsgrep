@@ -1,25 +1,25 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
-
+import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.kohsuke.args4j.CmdLineException;
@@ -69,6 +69,16 @@ public class App
 
     public void start()
     {
+        try
+        {
+            this.reportFormat= new StringTemplate(this.option.getReportFormat() + "\n");
+        }
+        catch(ParseException e)
+        {
+            this.err.format("`%s' は不正です。", this.option.getReportFormat());
+            return;
+        }
+
         final Stream<Path> paths= this.option.getPaths()
             .map(this::files)
             .reduce(Stream::concat)
@@ -154,16 +164,16 @@ public class App
 
     private CharSequence format(@NonNull MatchResult data)
     {
-        final CharSequence filename= data.getFilepath().isPresent()
+        final Map<String, CharSequence> tplData= new HashMap<>();
+
+        tplData.put("filename", data.getFilepath().isPresent()
             ? data.getFilepath().get().toFile().getAbsolutePath()
             : "<<<Unknown>>>"
-        ;
-
-        return String.format("%s:%s:%s%n",
-            filename,
-            data.getSheetName(),
-            data.getCellAddress()
         );
+        tplData.put("sheet", data.getSheetName());
+        tplData.put("cell", data.getCellAddress());
+
+        return this.reportFormat.apply(tplData);
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
@@ -175,4 +185,6 @@ public class App
     private final PrintWriter out;
 
     private final PrintWriter err;
+
+    private StringTemplate reportFormat;
 }
