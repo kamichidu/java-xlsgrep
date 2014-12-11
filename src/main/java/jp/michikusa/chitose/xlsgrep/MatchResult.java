@@ -27,7 +27,7 @@ public class MatchResult
 
     public CharSequence getCellAddress()
     {
-        return Addresses.A1.format(this.cellRef.getRownum(), this.cellRef.getCellnum());
+        return this.cellRef.getAddress();
     }
 
     public void setFilepath(Path filepath)

@@ -83,7 +83,7 @@ public class ShapeMatcher
         return sshapes
             .filter((HSSFSimpleShape s) -> { return pattern.matcher(s.getString().getString()).find(); })
             .map((HSSFSimpleShape s) -> {
-                final CellReference cellref= new CellReference(sheet, -1, -1);
+                final CellReference cellref= new CellReference(sheet, s);
 
                 return new MatchResult(cellref);
             })
@@ -122,7 +122,7 @@ public class ShapeMatcher
         return sshapes
             .filter((XSSFSimpleShape s) -> { return pattern.matcher(s.getText()).find(); })
             .map((XSSFSimpleShape s) -> {
-                final CellReference cellref= new CellReference(sheet, -1, -1);
+                final CellReference cellref= new CellReference(sheet, s);
 
                 return new MatchResult(cellref);
             })
