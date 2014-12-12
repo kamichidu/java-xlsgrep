@@ -1,12 +1,10 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.NoSuchMatcherException;
 import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
@@ -15,13 +13,13 @@ import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
-import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
+import jp.michikusa.chitose.xlsgrep.util.MultiGlobOptionHandler;
+
 import lombok.Getter;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.spi.StringArrayOptionHandler;
 
 public class AppOption
 {
@@ -56,8 +54,15 @@ public class AppOption
         }
     }
 
-    public Stream<Path> getPaths() {
-        return Arrays.stream(this.paths).map(Paths::get);
+    public Iterable<String> getGlobExprs()
+    {
+        final Set<String> exprs= new LinkedHashSet<>();
+        for(final String expr : this.exprs)
+        {
+            // unify path separator
+            exprs.add(expr.replace('\\', '/'));
+        }
+        return exprs;
     }
 
     public String getReportFormat()
@@ -88,6 +93,6 @@ public class AppOption
     @Argument(index= 0, required= true)
     private String pattern;
 
-    @Argument(index= 1, multiValued= true, handler= StringArrayOptionHandler.class)
-    private String[] paths= new String[0];
+    @Argument(index= 1, multiValued= true, handler= MultiGlobOptionHandler.class)
+    private String[] exprs= new String[0];
 }

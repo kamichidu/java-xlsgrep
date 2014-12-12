@@ -1,6 +1,5 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,15 +7,24 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
+
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -79,62 +87,81 @@ public class App
             return;
         }
 
-        final Stream<Path> paths= this.option.getPaths()
-            .map(this::files)
-            .reduce(Stream::concat)
-            .orElse(Stream.empty())
-        ;
-
-        final Stream<MatchResult> matches= paths
-            .map(this::matches)
-            .reduce(Stream::concat)
-            .orElse(Stream.empty())
-        ;
-
-        matches
-            .map(this::format)
-            .forEach((CharSequence msg) -> {
-                this.out.write(msg.toString());
-                this.out.flush();
-            })
-        ;
-    }
-
-    private Stream<Path> files(@NonNull Path path)
-    {
-        if(!path.toFile().exists())
+        final Pattern rootFsPat= Pattern.compile("^(?<rootfs>(?:[a-zA-Z]:)?/)");
+        for(final String expr : this.option.getGlobExprs())
         {
-            this.err.format("`%s' couldn't be found.%n", path.toFile().getAbsolutePath());
-            this.err.flush();
-            return Stream.empty();
-        }
-        if(path.toFile().isDirectory())
-        {
-            if(!this.option.isRecurse())
-            {
-                this.err.format("`%s' is a directory.%n", path.toFile().getAbsolutePath());
-                this.err.flush();
-                return Stream.empty();
-            }
-
-            final File[] children= path.toFile().listFiles();
-            if(children == null)
-            {
-                this.err.format("`%s' couldn't be opened.%n", path.toFile().getAbsolutePath());
-                this.err.flush();
-                return Stream.empty();
-            }
-
-            return Stream.of(children)
-                .map((File f) -> { return f.toPath(); })
-                .map(this::files)
-                .reduce(Stream::concat)
-                .orElse(Stream.empty())
+            final java.util.regex.Matcher rootFsMatcher= rootFsPat.matcher(expr);
+            final Path start= rootFsMatcher.find()
+                ? Paths.get(rootFsMatcher.group("rootfs"))
+                : Paths.get(".")
             ;
-        }
-        else
-        {
-            return Stream.of(path);
+
+            try
+            {
+                final App that= this;
+                final PathMatcher matcher= FileSystems.getDefault().getPathMatcher("glob:" + (this.option.isRecurse() ? "**/" : "") + expr);
+                Files.walkFileTree(start, new FileVisitor<Path>(){
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                        throws IOException
+                    {
+                        return dir.toFile().canRead()
+                            ? FileVisitResult.CONTINUE
+                            : FileVisitResult.SKIP_SUBTREE
+                        ;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                        throws IOException
+                    {
+                        if(exc == null)
+                        {
+                            return FileVisitResult.CONTINUE;
+                        }
+                        else
+                        {
+                            logger.warn("This is okay, but note this.", exc);
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException
+                    {
+                        if(matcher.matches(file))
+                        {
+                            that.matches(file)
+                                .map(that::format)
+                                .forEach((CharSequence msg) -> {
+                                    that.out.write(msg.toString());
+                                    that.out.flush();
+                                })
+                            ;
+                        }
+
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc)
+                        throws IOException
+                    {
+                        if(exc != null)
+                        {
+                            logger.warn("This is okay, but note this.", exc);
+                        }
+
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            }
+            catch(IOException e)
+            {
+                // IOException was suppressed
+                throw new AssertionError(e);
+            }
         }
     }
 
