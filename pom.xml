@@ -4,7 +4,7 @@
     <groupId>jp.michikusa.chitose</groupId>
     <artifactId>xlsgrep</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.4-SNAPSHOT</version>
     <name>xlsgrep</name>
     <url>https://github.com/kamichidu/java-xlsgrep</url>
     <licenses>
