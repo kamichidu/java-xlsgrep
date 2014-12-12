@@ -1,5 +1,8 @@
 package jp.michikusa.chitose.xlsgrep.util;
 
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import lombok.NonNull;
 
 import org.apache.poi.hssf.usermodel.HSSFAnchor;
@@ -7,7 +10,6 @@ import org.apache.poi.hssf.usermodel.HSSFChildAnchor;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFShape;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFChildAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
@@ -22,14 +24,13 @@ public enum Addresses
         {
             final StringBuilder buffer= new StringBuilder();
 
-            cellnum+= 1;
-            while(cellnum > 0)
+            do
             {
-                buffer.append((char)('A' + (cellnum % 26 - 1)));
-                cellnum/= 26;
-            }
+                buffer.append((char)('A' + cellnum % 26));
+                cellnum= (cellnum / 26) - 1;
+            }while(cellnum >= 0);
 
-            return buffer.toString() + (rownum + 1);
+            return buffer.reverse().toString() + (rownum + 1);
         }
     },
     R1C1
