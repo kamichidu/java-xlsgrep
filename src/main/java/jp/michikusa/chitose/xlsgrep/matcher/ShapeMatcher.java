@@ -1,5 +1,6 @@
 package jp.michikusa.chitose.xlsgrep.matcher;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -11,6 +12,7 @@ import lombok.NonNull;
 
 import org.apache.poi.POIXMLDocumentPart;
 import org.apache.poi.hssf.usermodel.HSSFPatriarch;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFShape;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFSimpleShape;
@@ -51,6 +53,19 @@ public class ShapeMatcher
         }
     }
 
+    // XXX: work around, getting a NPE when a shape has no text
+    private static Optional<HSSFRichTextString> getString(HSSFSimpleShape shape)
+    {
+        try
+        {
+            return Optional.ofNullable(shape.getString());
+        }
+        catch(NullPointerException e)
+        {
+            return Optional.empty();
+        }
+    }
+
     private Stream<MatchResult> matches(@NonNull HSSFWorkbook book, @NonNull Pattern pattern)
     {
         return StreamTaker.sheets(book)
@@ -81,6 +96,7 @@ public class ShapeMatcher
         ;
 
         return sshapes
+            .filter((HSSFSimpleShape s) -> { return getString(s).isPresent(); })
             .filter((HSSFSimpleShape s) -> { return pattern.matcher(s.getString().getString()).find(); })
             .map((HSSFSimpleShape s) -> {
                 final CellReference cellref= new CellReference(sheet, s);
