@@ -83,12 +83,13 @@ public class AppOption
     @Option(
         name= "--format",
         aliases= "-f",
-        usage= "Specify reporting format\n" +
+        usage= "Specify reporting format (Default: '{filename}:{sheet}:{cell}:{matched}')\n" +
                "    {filename} - The filename\n" +
                "    {sheet}    - The sheet name\n" +
-               "    {cell}     - The cell address\n"
+               "    {cell}     - The cell address\n" +
+               "    {matched}  - The matched text\n"
     )
-    private String format= "{filename}:{sheet}:{cell}";
+    private String format= "{filename}:{sheet}:{cell}:{matched}";
 
     @Argument(index= 0, required= true)
     private String pattern;

@@ -97,13 +97,24 @@ public class ShapeMatcher
 
         return sshapes
             .filter((HSSFSimpleShape s) -> { return getString(s).isPresent(); })
-            .filter((HSSFSimpleShape s) -> { return pattern.matcher(s.getString().getString()).find(); })
-            .map((HSSFSimpleShape s) -> {
-                final CellReference cellref= new CellReference(sheet, s);
-
-                return new MatchResult(cellref);
-            })
+            .map((HSSFSimpleShape s) -> { return this.matches(sheet, s, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> { return r.get(); })
         ;
+    }
+
+    private Optional<MatchResult> matches(@NonNull HSSFSheet sheet, @NonNull HSSFSimpleShape shape, @NonNull Pattern pattern)
+    {
+        final String text= shape.getString().getString();
+        final java.util.regex.Matcher rmatcher= pattern.matcher(text);
+        if(rmatcher.find())
+        {
+            return Optional.of(new MatchResult(new CellReference(sheet, shape), text, rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private Stream<MatchResult> matches(@NonNull XSSFWorkbook book, @NonNull Pattern pattern)
@@ -136,13 +147,24 @@ public class ShapeMatcher
         ;
 
         return sshapes
-            .filter((XSSFSimpleShape s) -> { return pattern.matcher(s.getText()).find(); })
-            .map((XSSFSimpleShape s) -> {
-                final CellReference cellref= new CellReference(sheet, s);
-
-                return new MatchResult(cellref);
-            })
+            .map((XSSFSimpleShape s) -> { return this.matches(sheet, s, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> { return r.get(); })
         ;
+    }
+
+    private Optional<MatchResult> matches(@NonNull XSSFSheet sheet, @NonNull XSSFSimpleShape shape, @NonNull Pattern pattern)
+    {
+        final String text= shape.getText();
+        final java.util.regex.Matcher rmatcher= pattern.matcher(text);
+        if(rmatcher.find())
+        {
+            return Optional.of(new MatchResult(new CellReference(sheet, shape), text, rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private static final Logger logger= LoggerFactory.getLogger(ShapeMatcher.class);

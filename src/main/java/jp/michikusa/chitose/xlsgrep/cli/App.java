@@ -199,6 +199,7 @@ public class App
         );
         tplData.put("sheet", data.getSheetName());
         tplData.put("cell", data.getCellAddress());
+        tplData.put("matched", data.getMatched());
 
         return this.reportFormat.apply(tplData);
     }

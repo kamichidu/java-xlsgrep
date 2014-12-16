@@ -1,13 +1,13 @@
 package jp.michikusa.chitose.xlsgrep.matcher;
 
-import java.util.Spliterator;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.util.CellReference;
 import jp.michikusa.chitose.xlsgrep.util.StreamTaker;
+
 import lombok.NonNull;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -25,24 +25,27 @@ public class CellTextMatcher
     @Override
     public Stream<MatchResult> matches(@NonNull Pattern pattern)
     {
-        final Spliterator<MatchResult> spliterator= StreamTaker.cells(this.workbook)
-            .filter((Cell cell) -> this.match(cell, pattern))
-            .map(this::makeResult)
-            .spliterator()
+        return StreamTaker.cells(this.workbook)
+            .map((Cell c) -> { return this.matches(c, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> { return r.get(); })
         ;
-        return StreamSupport.stream(spliterator, true);
     }
 
-    private boolean match(@NonNull Cell cell, @NonNull Pattern pattern)
+    private Optional<MatchResult> matches(@NonNull Cell cell, @NonNull Pattern pattern)
     {
-        return pattern.matcher(this.formatter.formatCellValue(cell)).find();
-    }
+        final String text= this.formatter.formatCellValue(cell);
+        final java.util.regex.Matcher rmatcher= pattern.matcher(text);
+        if(rmatcher.find())
+        {
+            final CellReference ref= new CellReference(cell);
 
-    private MatchResult makeResult(@NonNull Cell cell)
-    {
-        final CellReference ref= new CellReference(cell);
-
-        return new MatchResult(ref);
+            return Optional.of(new MatchResult(ref, text, rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private final Workbook workbook;

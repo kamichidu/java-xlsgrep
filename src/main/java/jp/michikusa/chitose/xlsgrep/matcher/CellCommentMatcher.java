@@ -10,6 +10,7 @@ import java.util.stream.StreamSupport;
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.util.CellReference;
 import jp.michikusa.chitose.xlsgrep.util.StreamTaker;
+
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,11 @@ public class CellCommentMatcher
 
     @Override
     public Stream<MatchResult> matches(@NonNull Pattern pattern) {
-         Spliterator<MatchResult> spliterator= cells(this.workbook)
-            .filter((CellComment c) -> this.match(c, pattern))
-            .map(this::makeResult)
-            .spliterator()
+         return cells(this.workbook)
+            .map((CellComment c) -> { return this.matches(c, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> { return r.get(); })
         ;
-         return StreamSupport.stream(spliterator, true);
     }
 
     @RequiredArgsConstructor
@@ -79,16 +79,20 @@ public class CellCommentMatcher
         ;
     }
 
-    private boolean match(@NonNull CellComment comment, @NonNull Pattern pattern)
+    private Optional<MatchResult> matches(@NonNull CellComment comment, @NonNull Pattern pattern)
     {
-        return pattern.matcher(comment.getComment().getString().getString()).find();
-    }
+        final String commentText= comment.getComment().getString().getString();
+        final java.util.regex.Matcher rmatcher= pattern.matcher(commentText);
+        if(rmatcher.find())
+        {
+            final CellReference ref= new CellReference(comment.getSheet(), comment.getComment().getRow(), comment.getComment().getColumn());
 
-    private MatchResult makeResult(@NonNull CellComment comment)
-    {
-        final CellReference ref= new CellReference(comment.getSheet(), comment.getComment().getRow(), comment.getComment().getColumn());
-
-        return new MatchResult(ref);
+            return Optional.of(new MatchResult(ref, commentText, rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private final Workbook workbook;

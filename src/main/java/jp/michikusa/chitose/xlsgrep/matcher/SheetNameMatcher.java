@@ -1,10 +1,10 @@
 package jp.michikusa.chitose.xlsgrep.matcher;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
-import jp.michikusa.chitose.xlsgrep.util.CellReference;
 import jp.michikusa.chitose.xlsgrep.util.StreamTaker;
 
 import lombok.NonNull;
@@ -21,16 +21,27 @@ public class SheetNameMatcher
     }
 
     @Override
-    public Stream<MatchResult> matches(Pattern pattern)
+    public Stream<MatchResult> matches(@NonNull Pattern pattern)
     {
         return StreamTaker.sheets(this.workbook)
-            .filter((Sheet s) -> { return pattern.matcher(s.getSheetName()).find(); })
-            .map((Sheet s) -> {
-                final CellReference cellref= new CellReference(s, -1, -1);
-
-                return new MatchResult(cellref);
-            })
+            .map((Sheet s) -> { return this.matches(s, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> { return r.get(); })
         ;
+    }
+
+    private Optional<MatchResult> matches(@NonNull Sheet sheet, @NonNull Pattern pattern)
+    {
+        final String text= sheet.getSheetName();
+        final java.util.regex.Matcher rmatcher= pattern.matcher(text);
+        if(rmatcher.find())
+        {
+            return Optional.of(new MatchResult(null, text, rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private final Workbook workbook;

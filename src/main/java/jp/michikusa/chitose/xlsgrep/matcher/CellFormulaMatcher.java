@@ -1,5 +1,6 @@
 package jp.michikusa.chitose.xlsgrep.matcher;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -27,13 +28,25 @@ public class CellFormulaMatcher
 
         return cells
             .filter((Cell c) -> { return c.getCellType() == Cell.CELL_TYPE_FORMULA; })
-            .filter((Cell c) -> { return pattern.matcher(c.getCellFormula()).find(); })
-            .map((Cell c) -> {
-                final CellReference cellref= new CellReference(c);
-
-                return new MatchResult(cellref);
-            })
+            .map((Cell c) -> { return this.matches(c, pattern); })
+            .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
+            .map((Optional<MatchResult> r) -> {return r.get(); })
         ;
+    }
+
+    private Optional<MatchResult> matches(@NonNull Cell cell, @NonNull Pattern pattern)
+    {
+        final java.util.regex.Matcher rmatcher= pattern.matcher(cell.getCellFormula());
+        if(rmatcher.find())
+        {
+            final CellReference cellref= new CellReference(cell);
+
+            return Optional.of(new MatchResult(cellref, cell.getCellFormula(), rmatcher.start(), rmatcher.end()));
+        }
+        else
+        {
+            return Optional.empty();
+        }
     }
 
     private final Workbook workbook;
