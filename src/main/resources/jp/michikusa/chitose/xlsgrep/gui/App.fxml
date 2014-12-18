@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Copyright (c) 2012, 2014, Oracle and/or its affiliates.
+  All rights reserved. Use is subject to license terms.
+
+  This file is available and licensed under the following license:
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+
+  - Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+  - Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the distribution.
+  - Neither the name of Oracle Corporation nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+    <children>
+        <MenuBar VBox.vgrow="NEVER">
+            <menus>
+                <Menu mnemonicParsing="false" text="File">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="New" />
+                        <MenuItem mnemonicParsing="false" text="Open…" />
+                        <Menu mnemonicParsing="false" text="Open Recent" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Close" />
+                        <MenuItem mnemonicParsing="false" text="Save" />
+                        <MenuItem mnemonicParsing="false" text="Save As…" />
+                        <MenuItem mnemonicParsing="false" text="Revert" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Preferences…" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Quit" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Undo" />
+                        <MenuItem mnemonicParsing="false" text="Redo" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Cut" />
+                        <MenuItem mnemonicParsing="false" text="Copy" />
+                        <MenuItem mnemonicParsing="false" text="Paste" />
+                        <MenuItem mnemonicParsing="false" text="Delete" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Select All" />
+                        <MenuItem mnemonicParsing="false" text="Unselect All" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+        <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+            <children>
+                <VBox prefHeight="375.0" prefWidth="640.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <children>
+                        <ScrollPane fitToWidth="true" prefHeight="171.0" prefWidth="800.0">
+                            <content>
+                                <HBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+                                    <children>
+                                        <VBox spacing="10.0">
+                                            <children>
+                                                <HBox fillHeight="false">
+                                                    <children>
+                                                        <Label prefWidth="100.0" text="検索文字列" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                        <TextField fx:id="pattern" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                    </children>
+                                                </HBox>
+                                                <HBox fillHeight="false">
+                                                    <children>
+                                                        <Label prefWidth="100.0" text="検索対象" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                        <HBox GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                            <children>
+                                                                <CheckBox fx:id="matcherText" minWidth="90.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="90.0" text="表示文字列" />
+                                                                <CheckBox fx:id="matcherFormula" minWidth="60.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="60.0" text="数式" />
+                                                                <CheckBox fx:id="matcherComment" minWidth="70.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="70.0" text="コメント" />
+                                                                <CheckBox fx:id="matcherShape" minWidth="90.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="90.0" text="オートシェイプ" />
+                                                                <CheckBox fx:id="matcherSheetName" minWidth="70.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="70.0" text="シート名" />
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </HBox>
+                                                <HBox fillHeight="false" prefHeight="100.0" prefWidth="200.0">
+                                                    <children>
+                                                        <Label prefWidth="100.0" text="対象ファイル" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                                            <children>
+                                                                <HBox>
+                                                                    <children>
+                                                                        <Button mnemonicParsing="false" onAction="#addFile" text="ファイル追加" />
+                                                                        <Button mnemonicParsing="false" onAction="#addDirectory" text="ディレクトリ追加" />
+                                                                        <Button mnemonicParsing="false" onAction="#removeFile" text="削除" />
+                                                                    </children>
+                                                                </HBox>
+                                                                <ListView fx:id="files" minHeight="50.0" />
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                        <Button mnemonicParsing="false" onAction="#doGrep" text="検索" />
+                                    </children>
+                                </HBox>
+                            </content>
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                        </ScrollPane>
+                        <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="404.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                            <content>
+                                <AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+                                    <children>
+                                        <TreeView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                    </children>
+                                </AnchorPane>
+                            </content>
+                        </ScrollPane>
+                    </children>
+                </VBox>
+            </children>
+        </AnchorPane>
+    </children>
+</VBox>

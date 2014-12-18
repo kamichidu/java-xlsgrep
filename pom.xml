@@ -226,5 +226,13 @@
             <version>[3.10,)</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>javafx</artifactId>
+            <version>0</version>
+            <systemPath>${java.home}/lib/ext/jfxrt.jar</systemPath>
+            <scope>system</scope>
+        </dependency>
     </dependencies>
 </project>
