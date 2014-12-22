@@ -39,9 +39,10 @@ xlsgrepは、MS Excelを対象としたgrepツールです。
 
 以下、ファイルごとのインストール方法を記述します。
 
-#### xlsgrep-x.x.x-jar-with-dependencies.jar
+#### xlsgrep-x.x.x-gui.jar
 
-**TODO**
+1. ダウンロードしたファイルを任意の場所に置いてください
+
 
 #### xlsgrep-x.x.x.tar.gz
 
@@ -52,7 +53,7 @@ xlsgrepは、MS Excelを対象としたgrepツールです。
 
 ### 使い方
 
-端末から、linuxなら `xlsgrep` 、windowsなら `xlsgrep.bat` を実行することで起動することができます。
+端末から、 `xlsgrep` 、windowsなら `xlsgrep.bat` を実行することで起動することができます。
 `xlsgrep --help` で引数を確認してください。
 検索対象を `--matcher` もしくは `-m` で切り替えることができます。
 あと、Javaで実装しているのでJavaの正規表現が使えます。
@@ -76,7 +77,7 @@ TODO
 
     * [x] シート名
 
-* [ ] GUIの整備
+* [x] GUIの整備
 
 
 ライセンス
