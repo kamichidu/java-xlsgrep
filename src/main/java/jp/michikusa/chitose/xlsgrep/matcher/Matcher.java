@@ -3,10 +3,11 @@ package jp.michikusa.chitose.xlsgrep.matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.apache.poi.ss.usermodel.Workbook;
-
 import jp.michikusa.chitose.xlsgrep.MatchResult;
+
 import lombok.NonNull;
+
+import org.apache.poi.ss.usermodel.Workbook;
 
 public interface Matcher
 {

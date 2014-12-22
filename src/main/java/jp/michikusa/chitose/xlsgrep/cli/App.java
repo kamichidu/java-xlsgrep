@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
+
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
