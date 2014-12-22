@@ -1,32 +1,50 @@
 package jp.michikusa.chitose.xlsgrep.gui;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.function.Function;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javafx.application.Application;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.StageStyle;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import jp.michikusa.chitose.xlsgrep.MatchResult;
@@ -116,25 +134,96 @@ public class App
 	@FXML
 	private void doGrep(ActionEvent event)
 	{
-		final Stream<Path> paths= this.files();
+		final App that= this;
+		final Task<Stream<MatchResult>> task= new Task<Stream<MatchResult>>() {
+			@Override
+			protected Stream<MatchResult> call()
+				throws Exception
+			{
+				this.updateProgress(-1, -1);
+				this.updateMessage("ファイル一覧の作成中...");
 
-		final Stream<MatchResult> results= paths
-			.map((Path p) -> { return this.matches(p, this.matchers()); })
-			.reduce(Stream::concat)
-			.orElse(Stream.empty())
-		;
+				final Collection<Path> paths= that.files();
 
-		final TreeItem<CharSequence> root= new TreeItem<>("検索結果");
-		this.result.setRoot(root);
-		results.forEach((MatchResult r) -> {
-			final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
+				if(paths.isEmpty())
+				{
+					return Stream.empty();
+				}
 
-			final TreeItem<CharSequence> item= new TreeItem<>();
+				this.updateProgress(0, paths.size());
+				this.updateMessage("検索中...");
 
-			item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
+				final Stream.Builder<Stream<MatchResult>> results= Stream.builder();
+				int done= 0;
+				for(final Path path : paths)
+				{
+					results.add(that.matches(path, that.matchers()));
+					this.updateProgress(++done, paths.size());
+				}
 
-			parent.getChildren().add(item);
-		});
+                return results.build()
+                	.reduce(Stream::concat)
+                	.orElse(Stream.empty())
+                ;
+			}
+		};
+
+		try
+		{
+            final TreeItem<CharSequence> root= new TreeItem<>("検索結果");
+
+            this.result.setRoot(root);
+
+            Executors.newCachedThreadPool().execute(task);
+
+            // TODO: make fxml
+            final Scene scene;
+            {
+            	final Label label= new Label();
+            	final ProgressBar progress= new ProgressBar();
+
+            	progress.progressProperty().bind(task.progressProperty());
+            	label.textProperty().bind(task.messageProperty());;
+
+            	final VBox vbox= new VBox();
+
+            	vbox.getChildren().add(new AnchorPane(progress));
+            	vbox.getChildren().add(new AnchorPane(label));
+
+            	label.prefWidthProperty().bind(vbox.prefWidthProperty());
+            	progress.prefWidthProperty().bind(vbox.prefWidthProperty());
+
+            	scene= new Scene(vbox);
+
+            	vbox.prefWidthProperty().bind(scene.widthProperty());
+            }
+//		    final Stage stage= new Stage(StageStyle.UTILITY);
+		    final Stage stage= new Stage(StageStyle.UNDECORATED);
+
+		    stage.setTitle("進捗状況");
+		    stage.setScene(scene);
+		    stage.setWidth(200);
+		    stage.initOwner(this.result.getScene().getWindow());
+		    stage.initModality(Modality.WINDOW_MODAL);
+		    stage.setResizable(false);
+            task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, (WorkerStateEvent evt) -> { stage.close(); });
+            task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent evt) -> { stage.close(); });
+            stage.showAndWait();
+
+			final Stream<MatchResult> result= task.get();
+			result.forEach((MatchResult r) -> {
+            	final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
+                final TreeItem<CharSequence> item= new TreeItem<>();
+
+                item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
+
+                parent.getChildren().add(item);
+            });
+		}
+		catch(Exception e)
+		{
+			logger.error("Something wrong while executing grep.", e);
+		}
 	}
 
 	private TreeItem<CharSequence> findOrCreateSheetNode(TreeItem<CharSequence> base, MatchResult key)
@@ -172,7 +261,7 @@ public class App
 		return fileNode;
 	}
 
-	private Stream<Path> files()
+	private Collection<Path> files()
 	{
 		final Stream<Path> paths= this.files.getItems().stream()
 			.<Stream<Path>>map((Path p) -> {
@@ -203,10 +292,15 @@ public class App
 				return name.endsWith(".xls") || name.endsWith(".xlsx");
 			}
 		};
-		return paths
+
+		final Set<Path> files= new TreeSet<>();
+		paths
 			.filter((Path p) -> { return p.toFile().isFile(); })
 			.filter((Path p) -> { return fnameFilter.accept(p.getParent().toFile(), p.toFile().getName()); })
+			.forEach((Path p) -> { files.add(p); });
 		;
+
+		return files;
 	}
 
 	private Stream<Matcher> matchers()
