@@ -1,9 +1,7 @@
 package jp.michikusa.chitose.xlsgrep.cli;
 
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import jp.michikusa.chitose.xlsgrep.NoSuchMatcherException;
@@ -14,29 +12,27 @@ import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
 import jp.michikusa.chitose.xlsgrep.util.MultiGlobOptionHandler;
-
 import lombok.Getter;
 
-import org.apache.poi.ss.usermodel.Workbook;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
 public class AppOption
 {
-    public Function<Workbook, Matcher> getMatcher()
+    public Matcher getMatcher()
     {
         switch(this.matcher)
         {
             case "text":
-                return (Workbook workbook) -> new CellTextMatcher(workbook);
+                return new CellTextMatcher();
             case "comment":
-                return (Workbook workbook) -> new CellCommentMatcher(workbook);
+                return new CellCommentMatcher();
             case "shape":
-                return (Workbook workbook) -> new ShapeMatcher(workbook);
+                return new ShapeMatcher();
             case "sheet":
-                return (Workbook workbook) -> new SheetNameMatcher(workbook);
+                return new SheetNameMatcher();
             case "formula":
-                return (Workbook workbook) -> new CellFormulaMatcher(workbook);
+                return new CellFormulaMatcher();
             default:
                 throw new NoSuchMatcherException(this.matcher);
         }

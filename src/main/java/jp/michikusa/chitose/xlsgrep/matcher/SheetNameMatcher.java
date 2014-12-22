@@ -15,15 +15,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 public class SheetNameMatcher
     implements Matcher
 {
-    public SheetNameMatcher(@NonNull Workbook workbook)
-    {
-        this.workbook= workbook;
-    }
-
     @Override
-    public Stream<MatchResult> matches(@NonNull Pattern pattern)
+    public Stream<MatchResult> matches(@NonNull Workbook workbook, @NonNull Pattern pattern)
     {
-        return StreamTaker.sheets(this.workbook)
+        return StreamTaker.sheets(workbook)
             .map((Sheet s) -> { return this.matches(s, pattern); })
             .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
             .map((Optional<MatchResult> r) -> { return r.get(); })
@@ -43,6 +38,4 @@ public class SheetNameMatcher
             return Optional.empty();
         }
     }
-
-    private final Workbook workbook;
 }

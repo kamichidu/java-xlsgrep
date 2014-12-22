@@ -25,14 +25,9 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 public class CellCommentMatcher
     implements Matcher
 {
-    public CellCommentMatcher(@NonNull Workbook workbook)
-    {
-        this.workbook= workbook;
-    }
-
     @Override
-    public Stream<MatchResult> matches(@NonNull Pattern pattern) {
-         return cells(this.workbook)
+    public Stream<MatchResult> matches(@NonNull Workbook workbook, @NonNull Pattern pattern) {
+         return cells(workbook)
             .map((CellComment c) -> { return this.matches(c, pattern); })
             .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
             .map((Optional<MatchResult> r) -> { return r.get(); })
@@ -94,6 +89,4 @@ public class CellCommentMatcher
             return Optional.empty();
         }
     }
-
-    private final Workbook workbook;
 }

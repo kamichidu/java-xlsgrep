@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
-
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -169,8 +168,8 @@ public class App
     {
         try(final Workbook workbook= WorkbookFactory.create(path.toFile()))
         {
-            final Matcher matcher= this.option.getMatcher().apply(workbook);
-            final Stream<MatchResult> matches= matcher.matches(this.option.getPattern());
+            final Matcher matcher= this.option.getMatcher();
+            final Stream<MatchResult> matches= matcher.matches(workbook, this.option.getPattern());
             return matches.map((MatchResult r) -> {
                 r.setFilepath(path);
                 return r;

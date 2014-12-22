@@ -16,15 +16,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 public class CellFormulaMatcher
     implements Matcher
 {
-    public CellFormulaMatcher(@NonNull Workbook workbook)
-    {
-        this.workbook= workbook;
-    }
-
     @Override
-    public Stream<MatchResult> matches(@NonNull Pattern pattern)
+    public Stream<MatchResult> matches(@NonNull Workbook workbook, @NonNull Pattern pattern)
     {
-        final Stream<Cell> cells= StreamTaker.cells(this.workbook);
+        final Stream<Cell> cells= StreamTaker.cells(workbook);
 
         return cells
             .filter((Cell c) -> { return c.getCellType() == Cell.CELL_TYPE_FORMULA; })
@@ -48,6 +43,4 @@ public class CellFormulaMatcher
             return Optional.empty();
         }
     }
-
-    private final Workbook workbook;
 }

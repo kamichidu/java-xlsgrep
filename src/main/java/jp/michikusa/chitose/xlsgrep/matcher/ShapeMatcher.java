@@ -30,25 +30,20 @@ import org.slf4j.LoggerFactory;
 public class ShapeMatcher
     implements Matcher
 {
-    public ShapeMatcher(@NonNull Workbook workbook)
-    {
-        this.workbook= workbook;
-    }
-
     @Override
-    public Stream<MatchResult> matches(@NonNull Pattern pattern)
+    public Stream<MatchResult> matches(@NonNull Workbook workbook, @NonNull Pattern pattern)
     {
-        if(this.workbook instanceof HSSFWorkbook)
+        if(workbook instanceof HSSFWorkbook)
         {
-            return this.matches((HSSFWorkbook)this.workbook, pattern);
+            return this.matches((HSSFWorkbook)workbook, pattern);
         }
-        else if(this.workbook instanceof XSSFWorkbook)
+        else if(workbook instanceof XSSFWorkbook)
         {
-            return this.matches((XSSFWorkbook)this.workbook, pattern);
+            return this.matches((XSSFWorkbook)workbook, pattern);
         }
         else
         {
-            logger.warn("Unsupported workbook type `{}'.", this.workbook.getClass());
+            logger.warn("Unsupported workbook type `{}'.", workbook.getClass());
             return Stream.empty();
         }
     }
@@ -168,6 +163,4 @@ public class ShapeMatcher
     }
 
     private static final Logger logger= LoggerFactory.getLogger(ShapeMatcher.class);
-
-    private final Workbook workbook;
 }

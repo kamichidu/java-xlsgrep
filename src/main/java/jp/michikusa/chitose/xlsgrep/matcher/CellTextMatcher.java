@@ -17,15 +17,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 public class CellTextMatcher
     implements Matcher
 {
-    public CellTextMatcher(@NonNull Workbook workbook)
-    {
-        this.workbook= workbook;
-    }
-
     @Override
-    public Stream<MatchResult> matches(@NonNull Pattern pattern)
+    public Stream<MatchResult> matches(@NonNull Workbook workbook, @NonNull Pattern pattern)
     {
-        return StreamTaker.cells(this.workbook)
+        return StreamTaker.cells(workbook)
             .map((Cell c) -> { return this.matches(c, pattern); })
             .filter((Optional<MatchResult> r) -> { return r.isPresent(); })
             .map((Optional<MatchResult> r) -> { return r.get(); })
@@ -47,8 +42,6 @@ public class CellTextMatcher
             return Optional.empty();
         }
     }
-
-    private final Workbook workbook;
 
     private final DataFormatter formatter= new DataFormatter();
 }
