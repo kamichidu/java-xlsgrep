@@ -25,12 +25,26 @@ public class MatchResult
 
     public CharSequence getSheetName()
     {
-        return this.cellRef.getSheet().getSheetName();
+        if(this.cellRef != null)
+        {
+            return this.cellRef.getSheet().getSheetName();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public CharSequence getCellAddress()
     {
-        return this.cellRef.getAddress();
+        if(this.cellRef != null)
+        {
+            return this.cellRef.getAddress();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public void setFilepath(Path filepath)

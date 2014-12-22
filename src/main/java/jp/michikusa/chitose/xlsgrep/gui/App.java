@@ -43,17 +43,20 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.StageStyle;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
 import jp.michikusa.chitose.xlsgrep.MatchResult;
+import jp.michikusa.chitose.xlsgrep.matcher.*;
 import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.CellFormulaMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
+
 import lombok.NonNull;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -61,8 +64,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jp.michikusa.chitose.xlsgrep.matcher.*;
 
 public class App
     extends Application
@@ -86,7 +87,7 @@ public class App
 
         stage.setScene(new Scene(root));
 
-        stage.setTitle("xlsgrep - v0.0.4");
+        stage.setTitle(String.format("%s - %s", this.bundle.getString("app.name"), this.bundle.getString("app.version")));
         stage.show();
     }
 
@@ -219,6 +220,7 @@ public class App
 
                 item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
 
+                parent.setExpanded(true);
                 parent.getChildren().add(item);
             });
         }
@@ -241,6 +243,7 @@ public class App
 
         final TreeItem<CharSequence> sheetNode= new TreeItem<>(key.getSheetName());
 
+        fileNode.setExpanded(true);
         fileNode.getChildren().add(sheetNode);
 
         return sheetNode;
@@ -258,6 +261,7 @@ public class App
 
         final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toFile().getAbsolutePath());
 
+        base.setExpanded(true);
         base.getChildren().add(fileNode);
 
         return fileNode;
@@ -360,6 +364,8 @@ public class App
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
+
+    private final ResourceBundle bundle= ResourceBundle.getBundle(App.class.getCanonicalName());
 
     @FXML
     private TextField pattern;
