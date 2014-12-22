@@ -78,78 +78,102 @@
                 </Menu>
             </menus>
         </MenuBar>
-        <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
-            <children>
-                <VBox prefHeight="375.0" prefWidth="640.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                    <children>
-                        <ScrollPane fitToWidth="true" prefHeight="171.0" prefWidth="800.0">
+      <SplitPane dividerPositions="0.4" orientation="VERTICAL" prefHeight="572.0" prefWidth="800.0">
+        <items>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+               <children>
+                        <ScrollPane fitToWidth="true" prefHeight="224.0" prefWidth="798.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <content>
-                                <HBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
-                                    <children>
-                                        <VBox spacing="10.0">
-                                            <children>
-                                                <HBox fillHeight="false">
-                                                    <children>
-                                                        <Label prefWidth="100.0" text="検索文字列" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                        <TextField fx:id="pattern" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                                    </children>
-                                                </HBox>
-                                                <HBox fillHeight="false">
-                                                    <children>
-                                                        <Label prefWidth="100.0" text="検索対象" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                                        <HBox GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                                            <children>
-                                                                <CheckBox fx:id="matcherText" minWidth="90.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="90.0" text="表示文字列" />
-                                                                <CheckBox fx:id="matcherFormula" minWidth="60.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="60.0" text="数式" />
-                                                                <CheckBox fx:id="matcherComment" minWidth="70.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="70.0" text="コメント" />
-                                                                <CheckBox fx:id="matcherShape" minWidth="90.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="90.0" text="オートシェイプ" />
-                                                                <CheckBox fx:id="matcherSheetName" minWidth="70.0" mnemonicParsing="false" prefHeight="16.0" prefWidth="70.0" text="シート名" />
-                                                            </children>
-                                                        </HBox>
-                                                    </children>
-                                                </HBox>
-                                                <HBox fillHeight="false" prefHeight="100.0" prefWidth="200.0">
-                                                    <children>
-                                                        <Label prefWidth="100.0" text="対象ファイル" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
-                                                            <children>
-                                                                <HBox>
-                                                                    <children>
-                                                                        <Button mnemonicParsing="false" onAction="#addFile" text="ファイル追加" />
-                                                                        <Button mnemonicParsing="false" onAction="#addDirectory" text="ディレクトリ追加" />
-                                                                        <Button mnemonicParsing="false" onAction="#removeFile" text="削除" />
-                                                                    </children>
-                                                                </HBox>
-                                                                <ListView fx:id="files" minHeight="50.0" />
-                                                            </children>
-                                                        </VBox>
-                                                    </children>
-                                                </HBox>
-                                            </children>
-                                        </VBox>
-                                        <Button mnemonicParsing="false" onAction="#doGrep" text="検索" />
-                                    </children>
-                                </HBox>
+                        <AnchorPane>
+                           <children>
+                                      <HBox>
+                                          <children>
+                                              <VBox prefWidth="450.0" spacing="10.0">
+                                                  <children>
+                                                      <HBox fillHeight="false">
+                                                          <children>
+                                                              <Label prefWidth="100.0" text="検索文字列" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                              <TextField fx:id="pattern" prefHeight="25.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                          </children>
+                                                      </HBox>
+                                                      <HBox fillHeight="false">
+                                                          <children>
+                                                              <Label prefWidth="100.0" text="検索対象" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                              <HBox GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                                  <children>
+                                                      <VBox prefHeight="54.0" prefWidth="149.0">
+                                                         <children>
+                                                                            <CheckBox fx:id="matcherText" mnemonicParsing="false" text="表示文字列" />
+                                                                            <CheckBox fx:id="matcherFormula" mnemonicParsing="false" text="数式" />
+                                                                            <CheckBox fx:id="matcherComment" mnemonicParsing="false" text="コメント" />
+                                                         </children>
+                                                      </VBox>
+                                                      <VBox prefHeight="54.0" prefWidth="151.0">
+                                                         <children>
+                                                                            <CheckBox fx:id="matcherShape" mnemonicParsing="false" text="オートシェイプ" />
+                                                                            <CheckBox fx:id="matcherSheetName" mnemonicParsing="false" text="シート名" />
+                                                         </children>
+                                                      </VBox>
+                                                                  </children>
+                                                              </HBox>
+                                                          </children>
+                                                      </HBox>
+                                                      <HBox fillHeight="false" prefHeight="100.0" prefWidth="200.0">
+                                                          <children>
+                                                              <Label prefWidth="100.0" text="対象ファイル" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                              <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                                                  <children>
+                                                                      <HBox>
+                                                                          <children>
+                                                                              <Button mnemonicParsing="false" onAction="#addFile" text="ファイル追加" />
+                                                                              <Button mnemonicParsing="false" onAction="#addDirectory" text="ディレクトリ追加" />
+                                                                              <Button mnemonicParsing="false" onAction="#removeFile" text="削除" />
+                                                                          </children>
+                                                                      </HBox>
+                                                      <AnchorPane>
+                                                         <children>
+                                                                            <ListView fx:id="files" minHeight="50.0" prefHeight="75.0" prefWidth="300.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="-38.0" AnchorPane.topAnchor="0.0" />
+                                                         </children>
+                                                      </AnchorPane>
+                                                                  </children>
+                                                              </VBox>
+                                                          </children>
+                                                      </HBox>
+                                                  </children>
+                                              </VBox>
+                                    <VBox prefHeight="199.0" prefWidth="100.0">
+                                       <children>
+                                                    <Button layoutX="-8.0" layoutY="2.0" mnemonicParsing="false" onAction="#doGrep" prefHeight="25.0" prefWidth="111.0" text="検索" />
+                                       </children>
+                                    </VBox>
+                                          </children>
+                                      </HBox>
+                           </children>
+                        </AnchorPane>
                             </content>
                             <padding>
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                             </padding>
                         </ScrollPane>
-                        <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="404.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               </children>
+            </AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+               <children>
+                        <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="338.0" prefWidth="798.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <padding>
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                             </padding>
                             <content>
                                 <AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
                                     <children>
-                                        <TreeView fx:id="result" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                        <TreeView fx:id="result" layoutX="242.0" layoutY="38.0" prefHeight="328.0" prefWidth="788.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                                     </children>
                                 </AnchorPane>
                             </content>
                         </ScrollPane>
-                    </children>
-                </VBox>
-            </children>
-        </AnchorPane>
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
     </children>
 </VBox>

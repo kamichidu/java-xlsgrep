@@ -62,114 +62,116 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jp.michikusa.chitose.xlsgrep.matcher.*;
+
 public class App
-	extends Application
-	implements Initializable
+    extends Application
+    implements Initializable
 {
-	public static void main(String[] args)
-	{
-		launch(args);
-	}
+    public static void main(String[] args)
+    {
+        launch(args);
+    }
 
-	@Override
-	public void start(Stage stage)
-		throws Exception
-	{
-		final FXMLLoader loader= new FXMLLoader();
+    @Override
+    public void start(Stage stage)
+        throws Exception
+    {
+        final FXMLLoader loader= new FXMLLoader();
 
-		loader.setLocation(this.getClass().getResource(this.getClass().getSimpleName() + ".fxml"));
-		loader.setController(this);
+        loader.setLocation(this.getClass().getResource(this.getClass().getSimpleName() + ".fxml"));
+        loader.setController(this);
 
-		final Parent root= loader.load();
+        final Parent root= loader.load();
 
-		stage.setScene(new Scene(root));
+        stage.setScene(new Scene(root));
 
-		stage.setTitle("xlsgrep - v0.0.4");
-		stage.show();
-	}
+        stage.setTitle("xlsgrep - v0.0.4");
+        stage.show();
+    }
 
-	@Override
-	public void initialize(URL url, ResourceBundle bundle)
-	{
-	}
+    @Override
+    public void initialize(URL url, ResourceBundle bundle)
+    {
+    }
 
-	@FXML
-	private void addFile(ActionEvent event)
-	{
-		final FileChooser chooser= new FileChooser();
+    @FXML
+    private void addFile(ActionEvent event)
+    {
+        final FileChooser chooser= new FileChooser();
 
-		chooser.setTitle("ファイルを選択してください");
-		chooser.setInitialDirectory(new File(System.getProperty("user.home")));
-		chooser.getExtensionFilters().add(new ExtensionFilter("Excel ファイル", "*.xls", "*.xlsx"));
+        chooser.setTitle("ファイルを選択してください");
+        chooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        chooser.getExtensionFilters().add(new ExtensionFilter("Excel ファイル", "*.xls", "*.xlsx"));
 
-		final List<File> files= chooser.showOpenMultipleDialog(null);
-		files.forEach((File f) -> {
-			this.files.getItems().add(f.toPath().toAbsolutePath());
-		});
-	}
+        final List<File> files= chooser.showOpenMultipleDialog(null);
+        files.forEach((File f) -> {
+            this.files.getItems().add(f.toPath().toAbsolutePath());
+        });
+    }
 
-	@FXML
-	private void addDirectory(ActionEvent event)
-	{
-		final DirectoryChooser chooser= new DirectoryChooser();
+    @FXML
+    private void addDirectory(ActionEvent event)
+    {
+        final DirectoryChooser chooser= new DirectoryChooser();
 
-		chooser.setTitle("ディレクトリを選択してください");
-		chooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        chooser.setTitle("ディレクトリを選択してください");
+        chooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
-		final File file= chooser.showDialog(null);
-		if(file != null)
-		{
-			this.files.getItems().add(file.toPath().toAbsolutePath());
-		}
-	}
+        final File file= chooser.showDialog(null);
+        if(file != null)
+        {
+            this.files.getItems().add(file.toPath().toAbsolutePath());
+        }
+    }
 
-	@FXML
-	private void removeFile(ActionEvent event)
-	{
-		final List<Path> paths= this.files.getSelectionModel().getSelectedItems();
+    @FXML
+    private void removeFile(ActionEvent event)
+    {
+        final List<Path> paths= this.files.getSelectionModel().getSelectedItems();
 
-		this.files.getItems().removeAll(paths);
-	}
+        this.files.getItems().removeAll(paths);
+    }
 
-	@FXML
-	private void doGrep(ActionEvent event)
-	{
-		final App that= this;
-		final Task<Stream<MatchResult>> task= new Task<Stream<MatchResult>>() {
-			@Override
-			protected Stream<MatchResult> call()
-				throws Exception
-			{
-				this.updateProgress(-1, -1);
-				this.updateMessage("ファイル一覧の作成中...");
+    @FXML
+    private void doGrep(ActionEvent event)
+    {
+        final App that= this;
+        final Task<Stream<MatchResult>> task= new Task<Stream<MatchResult>>() {
+            @Override
+            protected Stream<MatchResult> call()
+                throws Exception
+            {
+                this.updateProgress(-1, -1);
+                this.updateMessage("ファイル一覧の作成中...");
 
-				final Collection<Path> paths= that.files();
+                final Collection<Path> paths= that.files();
 
-				if(paths.isEmpty())
-				{
-					return Stream.empty();
-				}
+                if(paths.isEmpty())
+                {
+                    return Stream.empty();
+                }
 
-				this.updateProgress(0, paths.size());
-				this.updateMessage("検索中...");
+                this.updateProgress(0, paths.size());
+                this.updateMessage("検索中...");
 
-				final Stream.Builder<Stream<MatchResult>> results= Stream.builder();
-				int done= 0;
-				for(final Path path : paths)
-				{
-					results.add(that.matches(path, that.matchers()));
-					this.updateProgress(++done, paths.size());
-				}
+                final Stream.Builder<Stream<MatchResult>> results= Stream.builder();
+                int done= 0;
+                for(final Path path : paths)
+                {
+                    results.add(that.matches(path, that.matchers()));
+                    this.updateProgress(++done, paths.size());
+                }
 
                 return results.build()
-                	.reduce(Stream::concat)
-                	.orElse(Stream.empty())
+                    .reduce(Stream::concat)
+                    .orElse(Stream.empty())
                 ;
-			}
-		};
+            }
+        };
 
-		try
-		{
+        try
+        {
             final TreeItem<CharSequence> root= new TreeItem<>("検索結果");
 
             this.result.setRoot(root);
@@ -179,175 +181,175 @@ public class App
             // TODO: make fxml
             final Scene scene;
             {
-            	final Label label= new Label();
-            	final ProgressBar progress= new ProgressBar();
+                final Label label= new Label();
+                final ProgressBar progress= new ProgressBar();
 
-            	progress.progressProperty().bind(task.progressProperty());
-            	label.textProperty().bind(task.messageProperty());;
+                progress.progressProperty().bind(task.progressProperty());
+                label.textProperty().bind(task.messageProperty());;
 
-            	final VBox vbox= new VBox();
+                final VBox vbox= new VBox();
 
-            	vbox.getChildren().add(new AnchorPane(progress));
-            	vbox.getChildren().add(new AnchorPane(label));
+                vbox.getChildren().add(new AnchorPane(progress));
+                vbox.getChildren().add(new AnchorPane(label));
 
-            	label.prefWidthProperty().bind(vbox.prefWidthProperty());
-            	progress.prefWidthProperty().bind(vbox.prefWidthProperty());
+                label.prefWidthProperty().bind(vbox.prefWidthProperty());
+                progress.prefWidthProperty().bind(vbox.prefWidthProperty());
 
-            	scene= new Scene(vbox);
+                scene= new Scene(vbox);
 
-            	vbox.prefWidthProperty().bind(scene.widthProperty());
+                vbox.prefWidthProperty().bind(scene.widthProperty());
             }
-//		    final Stage stage= new Stage(StageStyle.UTILITY);
-		    final Stage stage= new Stage(StageStyle.UNDECORATED);
+//          final Stage stage= new Stage(StageStyle.UTILITY);
+            final Stage stage= new Stage(StageStyle.UNDECORATED);
 
-		    stage.setTitle("進捗状況");
-		    stage.setScene(scene);
-		    stage.setWidth(200);
-		    stage.initOwner(this.result.getScene().getWindow());
-		    stage.initModality(Modality.WINDOW_MODAL);
-		    stage.setResizable(false);
+            stage.setTitle("進捗状況");
+            stage.setScene(scene);
+            stage.setWidth(200);
+            stage.initOwner(this.result.getScene().getWindow());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.setResizable(false);
             task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, (WorkerStateEvent evt) -> { stage.close(); });
             task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent evt) -> { stage.close(); });
             stage.showAndWait();
 
-			final Stream<MatchResult> result= task.get();
-			result.forEach((MatchResult r) -> {
-            	final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
+            final Stream<MatchResult> result= task.get();
+            result.forEach((MatchResult r) -> {
+                final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
                 final TreeItem<CharSequence> item= new TreeItem<>();
 
                 item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
 
                 parent.getChildren().add(item);
             });
-		}
-		catch(Exception e)
-		{
-			logger.error("Something wrong while executing grep.", e);
-		}
-	}
+        }
+        catch(Exception e)
+        {
+            logger.error("Something wrong while executing grep.", e);
+        }
+    }
 
-	private TreeItem<CharSequence> findOrCreateSheetNode(TreeItem<CharSequence> base, MatchResult key)
-	{
-		final TreeItem<CharSequence> fileNode= this.findOrCreateFileNode(base, key);
-		for(final TreeItem<CharSequence> sheetNode : fileNode.getChildren())
-		{
-			if(sheetNode.getValue().toString().equals(key.getSheetName().toString()))
-			{
-				return sheetNode;
-			}
-		}
+    private TreeItem<CharSequence> findOrCreateSheetNode(TreeItem<CharSequence> base, MatchResult key)
+    {
+        final TreeItem<CharSequence> fileNode= this.findOrCreateFileNode(base, key);
+        for(final TreeItem<CharSequence> sheetNode : fileNode.getChildren())
+        {
+            if(sheetNode.getValue().toString().equals(key.getSheetName().toString()))
+            {
+                return sheetNode;
+            }
+        }
 
-		final TreeItem<CharSequence> sheetNode= new TreeItem<>(key.getSheetName());
+        final TreeItem<CharSequence> sheetNode= new TreeItem<>(key.getSheetName());
 
-		fileNode.getChildren().add(sheetNode);
+        fileNode.getChildren().add(sheetNode);
 
-		return sheetNode;
-	}
+        return sheetNode;
+    }
 
-	private TreeItem<CharSequence> findOrCreateFileNode(TreeItem<CharSequence> base, MatchResult key)
-	{
-		for(final TreeItem<CharSequence> fileNode : base.getChildren())
-		{
-			if(fileNode.getValue().toString().equals(key.getSheetName().toString()))
-			{
-				return fileNode;
-			}
-		}
+    private TreeItem<CharSequence> findOrCreateFileNode(TreeItem<CharSequence> base, MatchResult key)
+    {
+        for(final TreeItem<CharSequence> fileNode : base.getChildren())
+        {
+            if(fileNode.getValue().toString().equals(key.getSheetName().toString()))
+            {
+                return fileNode;
+            }
+        }
 
-		final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toFile().getAbsolutePath());
+        final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toFile().getAbsolutePath());
 
-		base.getChildren().add(fileNode);
+        base.getChildren().add(fileNode);
 
-		return fileNode;
-	}
+        return fileNode;
+    }
 
-	private Collection<Path> files()
-	{
-		final Stream<Path> paths= this.files.getItems().stream()
-			.<Stream<Path>>map((Path p) -> {
-				if(p.toFile().isFile())
-				{
-					return Stream.of(p);
-				}
-				else
-				{
-					try
-					{
-						return Files.walk(p);
-					}
-					catch(IOException e)
-					{
-						logger.error("Couldn't walk directory.", e);
-						return Stream.empty();
-					}
-				}
-			})
-			.reduce(Stream::concat)
-			.orElse(Stream.empty())
-		;
+    private Collection<Path> files()
+    {
+        final Stream<Path> paths= this.files.getItems().stream()
+            .<Stream<Path>>map((Path p) -> {
+                if(p.toFile().isFile())
+                {
+                    return Stream.of(p);
+                }
+                else
+                {
+                    try
+                    {
+                        return Files.walk(p);
+                    }
+                    catch(IOException e)
+                    {
+                        logger.error("Couldn't walk directory.", e);
+                        return Stream.empty();
+                    }
+                }
+            })
+            .reduce(Stream::concat)
+            .orElse(Stream.empty())
+        ;
 
-		final FilenameFilter fnameFilter= new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".xls") || name.endsWith(".xlsx");
-			}
-		};
+        final FilenameFilter fnameFilter= new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".xls") || name.endsWith(".xlsx");
+            }
+        };
 
-		final Set<Path> files= new TreeSet<>();
-		paths
-			.filter((Path p) -> { return p.toFile().isFile(); })
-			.filter((Path p) -> { return fnameFilter.accept(p.getParent().toFile(), p.toFile().getName()); })
-			.forEach((Path p) -> { files.add(p); });
-		;
+        final Set<Path> files= new TreeSet<>();
+        paths
+            .filter((Path p) -> { return p.toFile().isFile(); })
+            .filter((Path p) -> { return fnameFilter.accept(p.getParent().toFile(), p.toFile().getName()); })
+            .forEach((Path p) -> { files.add(p); });
+        ;
 
-		return files;
-	}
+        return files;
+    }
 
-	private Stream<Matcher> matchers()
-	{
-		Stream.Builder<Matcher> matchers= Stream.builder();
+    private Stream<Matcher> matchers()
+    {
+        Stream.Builder<Matcher> matchers= Stream.builder();
 
-		if(this.matcherText.isSelected())
-		{
-			matchers.add(new CellTextMatcher());
-		}
-		if(this.matcherFormula.isSelected())
-		{
-			matchers.add(new CellFormulaMatcher());
-		}
-		if(this.matcherComment.isSelected())
-		{
-			matchers.add(new CellCommentMatcher());
-		}
-		if(this.matcherShape.isSelected())
-		{
-			matchers.add(new ShapeMatcher());
-		}
-		if(this.matcherSheetName.isSelected())
-		{
-			matchers.add(new SheetNameMatcher());
-		}
+        if(this.matcherText.isSelected())
+        {
+            matchers.add(new CellTextMatcher());
+        }
+        if(this.matcherFormula.isSelected())
+        {
+            matchers.add(new CellFormulaMatcher());
+        }
+        if(this.matcherComment.isSelected())
+        {
+            matchers.add(new CellCommentMatcher());
+        }
+        if(this.matcherShape.isSelected())
+        {
+            matchers.add(new ShapeMatcher());
+        }
+        if(this.matcherSheetName.isSelected())
+        {
+            matchers.add(new SheetNameMatcher());
+        }
 
-		return matchers.build();
-	}
+        return matchers.build();
+    }
 
     private Stream<MatchResult> matches(@NonNull Path path, @NonNull Stream<? extends Matcher> matchers)
     {
         try(final Workbook workbook= WorkbookFactory.create(path.toFile()))
         {
-        	return matchers
-        		.map((Matcher m) -> { return m.matches(workbook, Pattern.compile(this.pattern.getText())); })
-        		.reduce(Stream::concat)
-        		.orElse(Stream.empty())
-        		.map((MatchResult r) -> {
-        			r.setFilepath(path);
-        			return r;
-        		})
-        	;
+            return matchers
+                .map((Matcher m) -> { return m.matches(workbook, Pattern.compile(this.pattern.getText())); })
+                .reduce(Stream::concat)
+                .orElse(Stream.empty())
+                .map((MatchResult r) -> {
+                    r.setFilepath(path);
+                    return r;
+                })
+            ;
         }
         catch(InvalidFormatException | IllegalArgumentException | IOException e)
         {
-        	logger.warn("`{}' is not an Excel file.", path.toFile().getAbsolutePath());
+            logger.warn("`{}' is not an Excel file.", path.toFile().getAbsolutePath());
             return Stream.empty();
         }
         catch(Exception e)
@@ -357,29 +359,29 @@ public class App
         }
     }
 
-	private static final Logger logger= LoggerFactory.getLogger(App.class);
+    private static final Logger logger= LoggerFactory.getLogger(App.class);
 
-	@FXML
-	private TextField pattern;
+    @FXML
+    private TextField pattern;
 
-	@FXML
-	private CheckBox matcherText;
+    @FXML
+    private CheckBox matcherText;
 
-	@FXML
-	private CheckBox matcherFormula;
+    @FXML
+    private CheckBox matcherFormula;
 
-	@FXML
-	private CheckBox matcherComment;
+    @FXML
+    private CheckBox matcherComment;
 
-	@FXML
-	private CheckBox matcherShape;
+    @FXML
+    private CheckBox matcherShape;
 
-	@FXML
-	private CheckBox matcherSheetName;
+    @FXML
+    private CheckBox matcherSheetName;
 
-	@FXML
-	private ListView<Path> files;
+    @FXML
+    private ListView<Path> files;
 
-	@FXML
-	private TreeView<CharSequence> result;
+    @FXML
+    private TreeView<CharSequence> result;
 }
