@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -46,16 +49,13 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageBuilder;
 import javafx.stage.StageStyle;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
+import jp.michikusa.chitose.xlsgrep.javafx.ProgressDialog;
 import jp.michikusa.chitose.xlsgrep.matcher.*;
-import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
-import jp.michikusa.chitose.xlsgrep.matcher.CellFormulaMatcher;
-import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
-import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
-import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
-import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
+import jp.michikusa.chitose.xlsgrep.util.FileWalker;
 
 import lombok.NonNull;
 
@@ -143,7 +143,7 @@ public class App
             protected Stream<MatchResult> call()
                 throws Exception
             {
-                this.updateProgress(-1, -1);
+                this.updateProgress(0, 0);
                 this.updateMessage("ファイル一覧の作成中...");
 
                 final Collection<Path> paths= that.files();
@@ -182,23 +182,12 @@ public class App
             // TODO: make fxml
             final Scene scene;
             {
-                final Label label= new Label();
-                final ProgressBar progress= new ProgressBar();
+                final ProgressDialog progress= ProgressDialog.newProgressDialog();
 
                 progress.progressProperty().bind(task.progressProperty());
-                label.textProperty().bind(task.messageProperty());;
+                progress.textProperty().bind(task.messageProperty());;
 
-                final VBox vbox= new VBox();
-
-                vbox.getChildren().add(new AnchorPane(progress));
-                vbox.getChildren().add(new AnchorPane(label));
-
-                label.prefWidthProperty().bind(vbox.prefWidthProperty());
-                progress.prefWidthProperty().bind(vbox.prefWidthProperty());
-
-                scene= new Scene(vbox);
-
-                vbox.prefWidthProperty().bind(scene.widthProperty());
+                scene= new Scene(progress);
             }
 //          final Stage stage= new Stage(StageStyle.UTILITY);
             final Stage stage= new Stage(StageStyle.UNDECORATED);
@@ -269,43 +258,65 @@ public class App
 
     private Collection<Path> files()
     {
-        final Stream<Path> paths= this.files.getItems().stream()
-            .<Stream<Path>>map((Path p) -> {
-                if(p.toFile().isFile())
-                {
-                    return Stream.of(p);
-                }
-                else
-                {
-                    try
-                    {
-                        return Files.walk(p);
-                    }
-                    catch(IOException e)
-                    {
-                        logger.error("Couldn't walk directory.", e);
-                        return Stream.empty();
-                    }
-                }
-            })
-            .reduce(Stream::concat)
-            .orElse(Stream.empty())
-        ;
+        final FileWalker walker= new FileWalker();
 
-        final FilenameFilter fnameFilter= new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".xls") || name.endsWith(".xlsx");
+        this.files.getItems().forEach((Path p) -> {
+            if(p.toFile().isFile())
+            {
+                walker.addExpr(p.toFile().getAbsolutePath());
             }
-        };
+            else
+            {
+                walker.addExpr(p.toFile().getAbsolutePath() + "/**/*.{xls,xlsx}");
+            }
+        });
 
         final Set<Path> files= new TreeSet<>();
-        paths
-            .filter((Path p) -> { return p.toFile().isFile(); })
-            .filter((Path p) -> { return fnameFilter.accept(p.getParent().toFile(), p.toFile().getName()); })
-            .forEach((Path p) -> { files.add(p); });
-        ;
+        try
+        {
+            walker.walk(new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException
+                {
+                    return dir.toFile().canRead()
+                        ? FileVisitResult.CONTINUE
+                        : FileVisitResult.SKIP_SUBTREE
+                    ;
+                }
 
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException
+                {
+                    files.add(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc)
+                    throws IOException
+                {
+                    if(exc != null)
+                    {
+                        logger.warn("It's okay but note for debug.", exc);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException
+                {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+        catch(IOException e)
+        {
+            // IOException was suppressed
+            throw new AssertionError(e);
+        }
         return files;
     }
 

@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
+import jp.michikusa.chitose.xlsgrep.util.FileWalker;
 import jp.michikusa.chitose.xlsgrep.util.StringTemplate;
 
 import lombok.NonNull;
@@ -87,81 +88,71 @@ public class App
             return;
         }
 
-        final Pattern rootFsPat= Pattern.compile("^(?<rootfs>(?:[a-zA-Z]:)?/)");
-        for(final String expr : this.option.getGlobExprs())
+        final FileWalker walker= new FileWalker()
+            .recurse(this.option.isRecurse())
+            .addExprs(this.option.getGlobExprs())
+        ;
+
+        try
         {
-            final java.util.regex.Matcher rootFsMatcher= rootFsPat.matcher(expr);
-            final Path start= rootFsMatcher.find()
-                ? Paths.get(rootFsMatcher.group("rootfs"))
-                : Paths.get(".")
-            ;
+            final App that= this;
+            walker.walk(new FileVisitor<Path>(){
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException
+                {
+                    return dir.toFile().canRead()
+                        ? FileVisitResult.CONTINUE
+                        : FileVisitResult.SKIP_SUBTREE
+                    ;
+                }
 
-            try
-            {
-                final App that= this;
-                final PathMatcher matcher= FileSystems.getDefault().getPathMatcher("glob:" + (this.option.isRecurse() ? "**/" : "") + expr);
-                Files.walkFileTree(start, new FileVisitor<Path>(){
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                        throws IOException
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                    throws IOException
+                {
+                    if(exc == null)
                     {
-                        return dir.toFile().canRead()
-                            ? FileVisitResult.CONTINUE
-                            : FileVisitResult.SKIP_SUBTREE
-                        ;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                        throws IOException
-                    {
-                        if(exc == null)
-                        {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        else
-                        {
-                            logger.warn("This is okay, but note this.", exc);
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException
-                    {
-                        if(matcher.matches(file))
-                        {
-                            that.matches(file)
-                                .map(that::format)
-                                .forEach((CharSequence msg) -> {
-                                    that.out.write(msg.toString());
-                                    that.out.flush();
-                                })
-                            ;
-                        }
-
                         return FileVisitResult.CONTINUE;
                     }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc)
-                        throws IOException
+                    else
                     {
-                        if(exc != null)
-                        {
-                            logger.warn("This is okay, but note this.", exc);
-                        }
-
-                        return FileVisitResult.CONTINUE;
+                        logger.warn("This is okay, but note this.", exc);
+                        return FileVisitResult.SKIP_SUBTREE;
                     }
-                });
-            }
-            catch(IOException e)
-            {
-                // IOException was suppressed
-                throw new AssertionError(e);
-            }
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException
+                {
+                    that.matches(file)
+                        .map(that::format)
+                        .forEach((CharSequence msg) -> {
+                            that.out.write(msg.toString());
+                            that.out.flush();
+                        })
+                    ;
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc)
+                    throws IOException
+                {
+                    if(exc != null)
+                    {
+                        logger.warn("This is okay, but note this.", exc);
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+        catch(IOException e)
+        {
+            // IOException was suppressed
+            throw new AssertionError(e);
         }
     }
 
