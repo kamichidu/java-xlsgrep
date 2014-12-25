@@ -225,8 +225,13 @@ public class FileWalker
     {
         final String uexpr= ununified.toString()
             .replace('\\', '/')
-            .replaceFirst("^\\./", "")
+            .replaceAll("(?:^|/)\\.(?:$|/)", "")
         ;
+
+        if(uexpr.length() == 0)
+        {
+            return "**/*";
+        }
 
         if(ignoreCase)
         {
@@ -331,7 +336,10 @@ public class FileWalker
         {
             final String expr= "glob:" + parentExpr;
             logger.debug("result=[`{}']", expr);
-            return Arrays.asList(FileSystems.getDefault().getPathMatcher(expr));
+            return Arrays.asList(
+                FileSystems.getDefault().getPathMatcher(expr),
+                FileSystems.getDefault().getPathMatcher(expr + "/**/*")
+            );
         }
 
         final Set<PathMatcher> pathMatchers= new HashSet<>();

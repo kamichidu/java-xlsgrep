@@ -1,23 +1,20 @@
 package jp.michikusa.chitose.xlsgrep.gui;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -28,34 +25,30 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageBuilder;
 import javafx.stage.StageStyle;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.javafx.ProgressDialog;
-import jp.michikusa.chitose.xlsgrep.matcher.*;
+import jp.michikusa.chitose.xlsgrep.matcher.CellCommentMatcher;
+import jp.michikusa.chitose.xlsgrep.matcher.CellFormulaMatcher;
+import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
+import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
+import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
+import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
 import jp.michikusa.chitose.xlsgrep.util.FileWalker;
+import jp.michikusa.chitose.xlsgrep.util.MatchResultComparator;
 
 import lombok.NonNull;
 
@@ -138,36 +131,32 @@ public class App
     private void doGrep(ActionEvent event)
     {
         final App that= this;
-        final Task<Stream<MatchResult>> task= new Task<Stream<MatchResult>>() {
+        final Task<Iterable<MatchResult>> task= new Task<Iterable<MatchResult>>() {
             @Override
-            protected Stream<MatchResult> call()
+            protected Iterable<MatchResult> call()
                 throws Exception
             {
                 this.updateProgress(0, 0);
                 this.updateMessage("ファイル一覧の作成中...");
 
                 final Collection<Path> paths= that.files();
-
                 if(paths.isEmpty())
                 {
-                    return Stream.empty();
+                    return Collections.emptyList();
                 }
 
                 this.updateProgress(0, paths.size());
-                this.updateMessage("検索中...");
 
-                final Stream.Builder<Stream<MatchResult>> results= Stream.builder();
+                final List<MatchResult> results= new LinkedList<>();
                 int done= 0;
                 for(final Path path : paths)
                 {
-                    results.add(that.matches(path, that.matchers()));
+                    this.updateMessage(String.format("検索しています...\n%s", path.getFileName()));
+                    that.matches(path, that.matchers()).forEach(results::add);
                     this.updateProgress(++done, paths.size());
                 }
 
-                return results.build()
-                    .reduce(Stream::concat)
-                    .orElse(Stream.empty())
-                ;
+                return results;
             }
         };
 
@@ -179,7 +168,6 @@ public class App
 
             Executors.newCachedThreadPool().execute(task);
 
-            // TODO: make fxml
             final Scene scene;
             {
                 final ProgressDialog progress= ProgressDialog.newProgressDialog();
@@ -202,16 +190,34 @@ public class App
             task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent evt) -> { stage.close(); });
             stage.showAndWait();
 
-            final Stream<MatchResult> result= task.get();
-            result.forEach((MatchResult r) -> {
-                final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
-                final TreeItem<CharSequence> item= new TreeItem<>();
+            try
+            {
+                this.result.setVisible(false);
 
-                item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
+                final Iterable<MatchResult> results= task.get();
+                final Set<MatchResult> sorted= new TreeSet<>(new MatchResultComparator());
+                for(final MatchResult r : results)
+                {
+                    sorted.add(r);
+                }
+                for(final MatchResult r : sorted)
+                {
+                    final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
+                    final TreeItem<CharSequence> item= new TreeItem<>();
 
-                parent.setExpanded(true);
-                parent.getChildren().add(item);
-            });
+                    item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
+
+                    if(!parent.isExpanded())
+                    {
+                        parent.setExpanded(true);
+                    }
+                    parent.getChildren().add(item);
+                }
+            }
+            finally
+            {
+                this.result.setVisible(true);
+            }
         }
         catch(Exception e)
         {
@@ -242,13 +248,13 @@ public class App
     {
         for(final TreeItem<CharSequence> fileNode : base.getChildren())
         {
-            if(fileNode.getValue().toString().equals(key.getSheetName().toString()))
+            if(fileNode.getValue().toString().equals(key.getFilepath().get().toAbsolutePath().toString()))
             {
                 return fileNode;
             }
         }
 
-        final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toFile().getAbsolutePath());
+        final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toAbsolutePath().toString());
 
         base.setExpanded(true);
         base.getChildren().add(fileNode);
@@ -352,8 +358,12 @@ public class App
     {
         try(final Workbook workbook= WorkbookFactory.create(path.toFile()))
         {
+            final Pattern pattern= this.regexSearch.isSelected()
+                ? Pattern.compile(this.pattern.getText())
+                : Pattern.compile(Pattern.quote(this.pattern.getText()))
+            ;
             return matchers
-                .map((Matcher m) -> { return m.matches(workbook, Pattern.compile(this.pattern.getText())); })
+                .map((Matcher m) -> { return m.matches(workbook, pattern); })
                 .reduce(Stream::concat)
                 .orElse(Stream.empty())
                 .map((MatchResult r) -> {
@@ -380,6 +390,9 @@ public class App
 
     @FXML
     private TextField pattern;
+
+    @FXML
+    private CheckBox regexSearch;
 
     @FXML
     private CheckBox matcherText;

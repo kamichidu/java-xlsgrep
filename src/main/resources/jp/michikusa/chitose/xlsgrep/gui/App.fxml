@@ -63,7 +63,11 @@
                                                       <HBox fillHeight="false">
                                                           <children>
                                                               <Label prefWidth="100.0" text="検索文字列" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                              <TextField fx:id="pattern" prefHeight="25.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<children>
+                                                              <TextField fx:id="pattern" prefHeight="25.0" prefWidth="300.0" GridPane.columnIndex="1" GridPane.rowIndex="0" /><CheckBox fx:id="regexSearch" mnemonicParsing="false" text="正規表現" />
+</children>
+</VBox>
                                                           </children>
                                                       </HBox>
                                                       <HBox fillHeight="false">
