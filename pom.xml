@@ -77,7 +77,7 @@
 
                 <configuration>
                     <assembleDirectory>${project.build.directory}/${project.build.finalName}</assembleDirectory>
-                    <configurationDirectory>conf</configurationDirectory>
+                    <configurationDirectory>config</configurationDirectory>
                     <repositoryLayout>flat</repositoryLayout>
                     <repositoryName>lib</repositoryName>
                     <showConsoleWindow>false</showConsoleWindow>
@@ -116,6 +116,9 @@
                         <manifest>
                             <mainClass>jp.michikusa.chitose.xlsgrep.gui.App</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <Class-Path>config/</Class-Path>
+                        </manifestEntries>
                     </archive>
 
                     <descriptors>
@@ -148,6 +151,13 @@
         </plugins>
 
         <resources>
+            <resource>
+                <directory>src/main/config/</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
             <resource>
                 <directory>src/main/resources/</directory>
                 <filtering>true</filtering>
