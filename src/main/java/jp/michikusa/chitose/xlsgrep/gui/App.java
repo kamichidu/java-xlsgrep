@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -166,8 +167,6 @@ public class App
 
             this.result.setRoot(root);
 
-            Executors.newCachedThreadPool().execute(task);
-
             final Scene scene;
             {
                 final ProgressDialog progress= ProgressDialog.newProgressDialog();
@@ -188,7 +187,17 @@ public class App
             stage.setResizable(false);
             task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, (WorkerStateEvent evt) -> { stage.close(); });
             task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent evt) -> { stage.close(); });
-            stage.showAndWait();
+
+            final ExecutorService service= Executors.newCachedThreadPool();
+            try
+            {
+                service.execute(task);
+                stage.showAndWait();
+            }
+            finally
+            {
+                service.shutdownNow();
+            }
 
             try
             {
