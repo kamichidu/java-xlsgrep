@@ -365,12 +365,14 @@ public class App
 
     private Stream<MatchResult> matches(@NonNull Path path, @NonNull Stream<? extends Matcher> matchers)
     {
+        logger.info("Opening a file `{}'.", path);
         try(final Workbook workbook= WorkbookFactory.create(path.toFile()))
         {
             final Pattern pattern= this.regexSearch.isSelected()
                 ? Pattern.compile(this.pattern.getText())
                 : Pattern.compile(Pattern.quote(this.pattern.getText()))
             ;
+            logger.info("Start to grep by pattern `{}'.", pattern);
             return matchers
                 .map((Matcher m) -> { return m.matches(workbook, pattern); })
                 .reduce(Stream::concat)
