@@ -53,6 +53,8 @@ public class App
 
             parser.printUsage(System.err);
 
+            System.err.flush();
+
             System.exit(1);
         }
 
