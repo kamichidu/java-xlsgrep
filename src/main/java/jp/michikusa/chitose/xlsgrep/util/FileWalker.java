@@ -82,7 +82,7 @@ public class FileWalker
                     {
                         return Files.walk(gp.path)
                             .filter((Path p) -> {
-                                return gp.matchers.stream()
+                                return gp.matchers.isEmpty() || gp.matchers.stream()
                                     .anyMatch((PathMatcher pm) -> { return pm.matches(p); })
                                 ;
                             })
@@ -125,7 +125,7 @@ public class FileWalker
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             throws IOException
                         {
-                            final boolean matched= gp.matchers.stream()
+                            final boolean matched= gp.matchers.isEmpty() || gp.matchers.stream()
                                 .anyMatch((PathMatcher pm) -> { return pm.matches(file); })
                             ;
                             if(matched)
