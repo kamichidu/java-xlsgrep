@@ -18,6 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -42,19 +43,29 @@ public class App
     {
         final AppOption option= new AppOption();
         final CmdLineParser parser= new CmdLineParser(option);
+        boolean usageFlag;
         try
         {
             parser.parseArgument(args);
+
+            usageFlag= !option.hasRequires();
         }
         catch(CmdLineException e)
         {
-            System.err.println("Usage: xlsgrep [options] {pattern} [{path} ...]");
-            System.err.println();
+            usageFlag= true;
+        }
 
-            parser.printUsage(System.err);
-
+        if(option.isVersionFlag())
+        {
+            System.err.println(bundle.getString("usage.version"));
             System.err.flush();
-
+            System.exit(1);
+        }
+        if(usageFlag)
+        {
+            System.err.println(bundle.getString("usage.help"));
+            parser.printUsage(System.err);
+            System.err.flush();
             System.exit(1);
         }
 
@@ -198,6 +209,8 @@ public class App
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
+
+    private static final ResourceBundle bundle= ResourceBundle.getBundle(App.class.getCanonicalName());
 
     private final AppOption option;
 

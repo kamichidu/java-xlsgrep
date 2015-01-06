@@ -67,28 +67,33 @@ public class AppOption
         return this.format;
     }
 
+    public boolean hasRequires()
+    {
+        if(this.pattern == null)
+        {
+            return false;
+        }
+        return true;
+    }
+
     @Getter
-    @Option(name= "--recurse", aliases= "-R", usage= "Search files recursively (Default: false)")
+    @Option(name= "--version", aliases= "-v")
+    private boolean versionFlag= false;
+
+    @Getter
+    @Option(name= "--recurse", aliases= "-R")
     private boolean recurse;
 
-    @Option(name= "--matcher", aliases= "-m", usage= "Specify matcher for cell text or formula, or else (Available: 'text', 'comment', 'shape', 'sheet')")
+    @Option(name= "--matcher", aliases= "-m")
     private String matcher= "text";
 
-    @Option(name= "--regex", aliases= "-r", usage= "{pattern} is a Java regular expression (Default: false)")
+    @Option(name= "--regex", aliases= "-r")
     private boolean useRegex= false;
 
-    @Option(
-        name= "--format",
-        aliases= "-f",
-        usage= "Specify reporting format (Default: '{filename}:{sheet}:{cell}:{matched}')\n" +
-               "    {filename} - The filename\n" +
-               "    {sheet}    - The sheet name\n" +
-               "    {cell}     - The cell address\n" +
-               "    {matched}  - The matched text\n"
-    )
+    @Option(name= "--format", aliases= "-f")
     private String format= "{filename}:{sheet}:{cell}:{matched}";
 
-    @Argument(index= 0, required= true)
+    @Argument(index= 0)
     private String pattern;
 
     @Argument(index= 1, multiValued= true, handler= MultiGlobOptionHandler.class)
