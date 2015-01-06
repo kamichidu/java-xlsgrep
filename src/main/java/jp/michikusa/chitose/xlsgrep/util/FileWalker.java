@@ -334,11 +334,14 @@ public class FileWalker
 
         if(trie.isEmpty())
         {
-            final String expr= "glob:" + parentExpr;
+            final String expr= "glob:" + parentExpr.toString()
+                .replaceAll("\\*\\*/", "**")
+            ;
             logger.debug("result=[`{}']", expr);
             return Arrays.asList(
                 FileSystems.getDefault().getPathMatcher(expr),
-                FileSystems.getDefault().getPathMatcher(expr + "/**/*")
+                // FileSystems.getDefault().getPathMatcher(expr + "/**/*")
+                FileSystems.getDefault().getPathMatcher(expr + "/**")
             );
         }
 
