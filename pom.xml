@@ -190,7 +190,7 @@
         </profile>
 
         <profile>
-            <id>release</id>
+            <id>prod</id>
 
             <dependencies>
                 <!-- Apache License 2.0 https://logging.apache.org/log4j/1.2/license.html -->
