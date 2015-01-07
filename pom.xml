@@ -178,6 +178,7 @@
             </activation>
 
             <dependencies>
+                <!-- dual license LGPL 2.1 and EPL v1.0 http://logback.qos.ch/license.html -->
                 <dependency>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
@@ -192,6 +193,7 @@
             <id>release</id>
 
             <dependencies>
+                <!-- Apache License 2.0 https://logging.apache.org/log4j/1.2/license.html -->
                 <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -211,6 +213,7 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- MIT http://www.slf4j.org/license.html -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -218,6 +221,7 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- MIT https://github.com/kohsuke/args4j/blob/master/LICENSE -->
         <dependency>
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
@@ -239,6 +243,7 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Apache License 2.0 http://www.apache.org/licenses/LICENSE-2.0 -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -246,6 +251,7 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Apache License 2.0 http://www.apache.org/licenses/LICENSE-2.0 -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
@@ -253,6 +259,7 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Apache License 2.0 http://www.apache.org/licenses/LICENSE-2.0 -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml-schemas</artifactId>
