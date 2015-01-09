@@ -61,7 +61,6 @@ public class Config
                 final Map<String, Object> nestedData= (Map<String, Object>)data.get(firstKey);
                 if(nestedData == null)
                 {
-                    logger.warn("Counldn't find associated value with `{}'.", key);
                     return Optional.empty();
                 }
 
