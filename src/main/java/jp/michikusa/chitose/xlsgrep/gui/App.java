@@ -6,7 +6,9 @@ import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -48,6 +50,7 @@ import jp.michikusa.chitose.xlsgrep.matcher.CellTextMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.Matcher;
 import jp.michikusa.chitose.xlsgrep.matcher.ShapeMatcher;
 import jp.michikusa.chitose.xlsgrep.matcher.SheetNameMatcher;
+import jp.michikusa.chitose.xlsgrep.util.Config;
 import jp.michikusa.chitose.xlsgrep.util.FileWalker;
 import jp.michikusa.chitose.xlsgrep.util.MatchResultComparator;
 
@@ -65,6 +68,30 @@ public class App
 {
     public static void main(String[] args)
     {
+        // config path order:
+        //   1. $HOME/.xlsgrep/xlsgrep.yml
+        //   2. ./config/xlsgrep.yml
+        final List<Path> candidates= Arrays.asList(
+            Paths.get("./config/xlsgrep.yml"),
+            Paths.get(System.getProperty("user.home")).resolve(".xlsgrep/xlsgrep.yml"),
+            Paths.get(System.getProperty("user.home")).resolve("_xlsgrep/xlsgrep.yml")
+        );
+        for(final Path candidate : candidates)
+        {
+            if(candidate.toFile().canRead())
+            {
+                try
+                {
+                    logger.info("Try to load config file `{}'.", candidate);
+                    Config.load(candidate);
+                }
+                catch(IOException e)
+                {
+                    logger.error("Couldn't load config file.", e);
+                }
+            }
+        }
+
         launch(args);
     }
 
@@ -82,6 +109,14 @@ public class App
         stage.setScene(new Scene(root));
 
         stage.setTitle(String.format("%s - %s", this.bundle.getString("app.name"), this.bundle.getString("app.version")));
+        {
+            final int width= this.config.getAs("window.width", Integer.class).orElse(800);
+            stage.setWidth(width);
+
+            final int height= this.config.getAs("window.height", Integer.class).orElse(600);
+            stage.setHeight(height);
+        }
+
         stage.show();
     }
 
@@ -398,6 +433,8 @@ public class App
     private static final Logger logger= LoggerFactory.getLogger(App.class);
 
     private final ResourceBundle bundle= ResourceBundle.getBundle(App.class.getCanonicalName());
+
+    private final Config config= new Config();
 
     @FXML
     private TextField pattern;
