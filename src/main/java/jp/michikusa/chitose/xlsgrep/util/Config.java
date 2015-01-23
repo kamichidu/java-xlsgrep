@@ -46,7 +46,10 @@ public class Config
 
     public <T> Optional<T> getAs(@NonNull CharSequence key, @NonNull Class<T> type)
     {
-        return this.getAs(data,  key.toString(), type);
+        synchronized(data)
+        {
+            return this.getAs(data,  key.toString(), type);
+        }
     }
 
     private <T> Optional<T> getAs(@NonNull Map<String, Object> data, @NonNull String key, @NonNull Class<T> type)
