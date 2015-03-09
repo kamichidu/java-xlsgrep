@@ -1,5 +1,6 @@
 package jp.michikusa.chitose.xlsgrep.gui;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -13,12 +14,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javafx.application.Application;
@@ -31,16 +34,28 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Callback;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.javafx.ProgressDialog;
@@ -123,6 +138,101 @@ public class App
     @Override
     public void initialize(URL url, ResourceBundle bundle)
     {
+        this.result.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        this.result.setCellFactory(new Callback<TreeView<MatchResult>, TreeCell<MatchResult>>(){
+            @Override
+            public TreeCell<MatchResult> call(TreeView<MatchResult> view)
+            {
+                return new TreeCell<MatchResult>(){
+                    @Override
+                    protected void updateItem(MatchResult value, boolean empty)
+                    {
+                        super.updateItem(value, empty);
+                        if(!empty)
+                        {
+                            // FIXME: correct way!
+                            this.setText(this.getTreeItem().toString());
+                        }
+                    }
+                };
+            }
+        });
+        {
+            final ContextMenu menu= new ContextMenu();
+
+            {
+                final MenuItem item= new MenuItem();
+
+                item.setText("クリップボードにコピー");
+                item.setOnAction(this::copyToClipboard);
+
+                menu.getItems().add(item);
+            }
+            if(Desktop.isDesktopSupported()){
+                final MenuItem item= new MenuItem();
+
+                item.setText("Excelファイルを開く");
+                item.setOnAction(this::openFile);
+
+                menu.getItems().add(item);
+            }
+
+            this.result.setContextMenu(menu);
+        }
+    }
+
+    @FXML
+    private void openFile(ActionEvent event)
+    {
+        final Collection<TreeItem<MatchResult>> models= this.result.getSelectionModel().getSelectedItems();
+        if(models.isEmpty())
+        {
+            return;
+        }
+
+        models.stream()
+            .filter((TreeItem<?> item) -> {
+                return item.getValue() != null;
+            })
+            .filter((TreeItem<MatchResult> item) -> {
+                return item.getValue().getFilepath().isPresent();
+            })
+            .forEach((TreeItem<MatchResult> item) -> {
+                try
+                {
+                    Desktop.getDesktop().open(item.getValue().getFilepath().get().toFile());
+                }
+                catch(Exception e)
+                {
+                    logger.error("Couldnot open a file.", e);
+                }
+            });
+        ;
+    }
+
+    @FXML
+    private void copyToClipboard(ActionEvent event)
+    {
+        final Collection<TreeItem<MatchResult>> models= this.result.getSelectionModel().getSelectedItems();
+        if(models.isEmpty())
+        {
+            return;
+        }
+
+        final String text= models.stream()
+            .map((TreeItem<?> item) -> {
+                return item.toString();
+            })
+            .collect(Collectors.joining(System.getProperty("line.separator")))
+        ;
+
+        final Clipboard clipboard= Clipboard.getSystemClipboard();
+        final ClipboardContent content= new ClipboardContent();
+
+        content.putString(text);
+
+        clipboard.setContent(content);
     }
 
     @FXML
@@ -198,7 +308,13 @@ public class App
 
         try
         {
-            final TreeItem<CharSequence> root= new TreeItem<>("検索結果");
+            final TreeItem<MatchResult> root= new TreeItem<MatchResult>(){
+                @Override
+                public String toString()
+                {
+                    return "検索結果";
+                }
+            };
 
             this.result.setRoot(root);
 
@@ -246,10 +362,14 @@ public class App
                 }
                 for(final MatchResult r : sorted)
                 {
-                    final TreeItem<CharSequence> parent= this.findOrCreateSheetNode(root, r);
-                    final TreeItem<CharSequence> item= new TreeItem<>();
-
-                    item.setValue(String.format("%s - %s", r.getCellAddress(), r.getMatched()));
+                    final TreeItem<MatchResult> parent= this.findOrCreateSheetNode(root, r);
+                    final TreeItem<MatchResult> item= new TreeItem<MatchResult>(r){
+                        @Override
+                        public String toString()
+                        {
+                            return String.format("%s - %s", this.getValue().getCellAddress(), this.getValue().getMatched());
+                        }
+                    };
 
                     if(!parent.isExpanded())
                     {
@@ -269,18 +389,24 @@ public class App
         }
     }
 
-    private TreeItem<CharSequence> findOrCreateSheetNode(TreeItem<CharSequence> base, MatchResult key)
+    private TreeItem<MatchResult> findOrCreateSheetNode(TreeItem<MatchResult> base, MatchResult key)
     {
-        final TreeItem<CharSequence> fileNode= this.findOrCreateFileNode(base, key);
-        for(final TreeItem<CharSequence> sheetNode : fileNode.getChildren())
+        final TreeItem<MatchResult> fileNode= this.findOrCreateFileNode(base, key);
+        for(final TreeItem<MatchResult> sheetNode : fileNode.getChildren())
         {
-            if(sheetNode.getValue().toString().equals(key.getSheetName().toString()))
+            if(sheetNode.toString().equals(key.getSheetName().toString()))
             {
                 return sheetNode;
             }
         }
 
-        final TreeItem<CharSequence> sheetNode= new TreeItem<>(key.getSheetName());
+        final TreeItem<MatchResult> sheetNode= new TreeItem<MatchResult>(key){
+            @Override
+            public String toString()
+            {
+                return this.getValue().getSheetName().toString();
+            }
+        };
 
         fileNode.setExpanded(true);
         fileNode.getChildren().add(sheetNode);
@@ -288,18 +414,28 @@ public class App
         return sheetNode;
     }
 
-    private TreeItem<CharSequence> findOrCreateFileNode(TreeItem<CharSequence> base, MatchResult key)
+    private TreeItem<MatchResult> findOrCreateFileNode(TreeItem<MatchResult> base, MatchResult key)
     {
-        for(final TreeItem<CharSequence> fileNode : base.getChildren())
+        for(final TreeItem<MatchResult> fileNode : base.getChildren())
         {
-            if(fileNode.getValue().toString().equals(key.getFilepath().get().toAbsolutePath().toString()))
+            if(fileNode.toString().equals(key.getFilepath().get().toAbsolutePath().toString()))
             {
                 return fileNode;
             }
         }
 
-        final TreeItem<CharSequence> fileNode= new TreeItem<>(key.getFilepath().get().toAbsolutePath().toString());
-
+        final TreeItem<MatchResult> fileNode= new TreeItem<MatchResult>(key){
+            @Override
+            public String toString()
+            {
+                final Optional<Path> filepath= this.getValue().getFilepath();
+                if(!filepath.isPresent())
+                {
+                    return "<<<unknown>>>";
+                }
+                return filepath.get().toAbsolutePath().toString();
+            }
+        };
         base.setExpanded(true);
         base.getChildren().add(fileNode);
 
@@ -461,5 +597,5 @@ public class App
     private ListView<Path> files;
 
     @FXML
-    private TreeView<CharSequence> result;
+    private TreeView<MatchResult> result;
 }
