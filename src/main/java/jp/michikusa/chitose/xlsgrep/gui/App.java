@@ -38,6 +38,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -164,6 +165,23 @@ public class App
             {
                 final MenuItem item= new MenuItem();
 
+                item.setText("一括で開く");
+                item.setOnAction(this::expandRecursively);
+
+                menu.getItems().add(item);
+            }
+            {
+                final MenuItem item= new MenuItem();
+
+                item.setText("一括で閉じる");
+                item.setOnAction(this::unexpandRecursively);
+
+                menu.getItems().add(item);
+            }
+            menu.getItems().add(new SeparatorMenuItem());
+            {
+                final MenuItem item= new MenuItem();
+
                 item.setText("クリップボードにコピー");
                 item.setOnAction(this::copyToClipboard);
 
@@ -180,6 +198,18 @@ public class App
 
             this.result.setContextMenu(menu);
         }
+    }
+
+    @FXML
+    private void unexpandRecursively(ActionEvent event)
+    {
+        this.setExpanded(this.result.getRoot(), false);
+    }
+
+    @FXML
+    private void expandRecursively(ActionEvent event)
+    {
+        this.setExpanded(this.result.getRoot(), true);
     }
 
     @FXML
@@ -564,6 +594,19 @@ public class App
             logger.error("Something wrong.", e);
             return Stream.empty();
         }
+    }
+
+    private void setExpanded(TreeItem<?> node, boolean expanded)
+    {
+        if(node == null || node.isLeaf())
+        {
+            return;
+        }
+
+        node.setExpanded(expanded);
+        node.getChildren().forEach((TreeItem<?> child) -> {
+            this.setExpanded(child, expanded);
+        });
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
