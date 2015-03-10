@@ -42,8 +42,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -53,10 +51,6 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.Callback;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import jp.michikusa.chitose.xlsgrep.MatchResult;
 import jp.michikusa.chitose.xlsgrep.javafx.ProgressDialog;
@@ -141,23 +135,22 @@ public class App
     {
         this.result.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        this.result.setCellFactory(new Callback<TreeView<MatchResult>, TreeCell<MatchResult>>(){
-            @Override
-            public TreeCell<MatchResult> call(TreeView<MatchResult> view)
-            {
-                return new TreeCell<MatchResult>(){
-                    @Override
-                    protected void updateItem(MatchResult value, boolean empty)
+        this.result.setCellFactory((TreeView<MatchResult> view) -> {
+            return new TreeCell<MatchResult>(){
+                @Override
+                protected void updateItem(MatchResult value, boolean empty)
+                {
+                    super.updateItem(value, empty);
+                    if(!empty)
                     {
-                        super.updateItem(value, empty);
-                        if(!empty)
-                        {
-                            // FIXME: correct way!
-                            this.setText(this.getTreeItem().toString());
-                        }
+                        this.setText(getCellText(this.getTreeItem()));
                     }
-                };
-            }
+                    else
+                    {
+                        this.setText("");
+                    }
+                }
+            };
         });
         {
             final ContextMenu menu= new ContextMenu();
@@ -198,6 +191,21 @@ public class App
 
             this.result.setContextMenu(menu);
         }
+    }
+
+    private static class FileTreeItem<T>
+        extends TreeItem<T>
+    {
+    }
+
+    private static class SheetTreeItem<T>
+        extends TreeItem<T>
+    {
+    }
+
+    private static class CellTreeItem<T>
+        extends TreeItem<T>
+    {
     }
 
     @FXML
@@ -251,8 +259,8 @@ public class App
         }
 
         final String text= models.stream()
-            .map((TreeItem<?> item) -> {
-                return item.toString();
+            .map((TreeItem<MatchResult> item) -> {
+                return this.getCellText(item);
             })
             .collect(Collectors.joining(System.getProperty("line.separator")))
         ;
@@ -338,13 +346,7 @@ public class App
 
         try
         {
-            final TreeItem<MatchResult> root= new TreeItem<MatchResult>(){
-                @Override
-                public String toString()
-                {
-                    return "検索結果";
-                }
-            };
+            final TreeItem<MatchResult> root= new TreeItem<MatchResult>();
 
             this.result.setRoot(root);
 
@@ -393,13 +395,9 @@ public class App
                 for(final MatchResult r : sorted)
                 {
                     final TreeItem<MatchResult> parent= this.findOrCreateSheetNode(root, r);
-                    final TreeItem<MatchResult> item= new TreeItem<MatchResult>(r){
-                        @Override
-                        public String toString()
-                        {
-                            return String.format("%s - %s", this.getValue().getCellAddress(), this.getValue().getMatched());
-                        }
-                    };
+                    final TreeItem<MatchResult> item= new CellTreeItem<MatchResult>();
+
+                    item.setValue(r);
 
                     if(!parent.isExpanded())
                     {
@@ -430,13 +428,9 @@ public class App
             }
         }
 
-        final TreeItem<MatchResult> sheetNode= new TreeItem<MatchResult>(key){
-            @Override
-            public String toString()
-            {
-                return this.getValue().getSheetName().toString();
-            }
-        };
+        final TreeItem<MatchResult> sheetNode= new SheetTreeItem<MatchResult>();
+
+        sheetNode.setValue(key);
 
         fileNode.setExpanded(true);
         fileNode.getChildren().add(sheetNode);
@@ -454,18 +448,10 @@ public class App
             }
         }
 
-        final TreeItem<MatchResult> fileNode= new TreeItem<MatchResult>(key){
-            @Override
-            public String toString()
-            {
-                final Optional<Path> filepath= this.getValue().getFilepath();
-                if(!filepath.isPresent())
-                {
-                    return "<<<unknown>>>";
-                }
-                return filepath.get().toAbsolutePath().toString();
-            }
-        };
+        final TreeItem<MatchResult> fileNode= new FileTreeItem<MatchResult>();
+
+        fileNode.setValue(key);
+
         base.setExpanded(true);
         base.getChildren().add(fileNode);
 
@@ -607,6 +593,36 @@ public class App
         node.getChildren().forEach((TreeItem<?> child) -> {
             this.setExpanded(child, expanded);
         });
+    }
+
+    private String getCellText(TreeItem<? extends MatchResult> item)
+    {
+        if(item instanceof FileTreeItem)
+        {
+            final Optional<Path> filepath= item.getValue().getFilepath();
+            if(filepath.isPresent())
+            {
+                return filepath.get().toAbsolutePath().toString();
+            }
+            else
+            {
+                return "<<<unknown>>>";
+            }
+        }
+        if(item instanceof SheetTreeItem)
+        {
+            return item.getValue().getSheetName().toString();
+        }
+        if(item instanceof CellTreeItem)
+        {
+            return String.format("%s - %s", item.getValue().getCellAddress(), item.getValue().getMatched());
+        }
+        if(item.getParent() == null)
+        {
+            return "検索結果";
+        }
+
+        return "";
     }
 
     private static final Logger logger= LoggerFactory.getLogger(App.class);
