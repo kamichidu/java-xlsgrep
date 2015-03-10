@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
@@ -211,13 +212,17 @@ public class App
     @FXML
     private void unexpandRecursively(ActionEvent event)
     {
-        this.setExpanded(this.result.getRoot(), false);
+        Platform.runLater(() -> {
+            this.setExpanded(this.result.getRoot(), false);
+        });
     }
 
     @FXML
     private void expandRecursively(ActionEvent event)
     {
-        this.setExpanded(this.result.getRoot(), true);
+        Platform.runLater(() -> {
+            this.setExpanded(this.result.getRoot(), true);
+        });
     }
 
     @FXML
@@ -229,24 +234,30 @@ public class App
             return;
         }
 
-        models.stream()
-            .filter((TreeItem<?> item) -> {
-                return item.getValue() != null;
-            })
-            .filter((TreeItem<MatchResult> item) -> {
-                return item.getValue().getFilepath().isPresent();
-            })
-            .forEach((TreeItem<MatchResult> item) -> {
+        Platform.runLater(() -> {
+            final Set<Path> paths= models.stream()
+                .filter((TreeItem<?> item) -> {
+                    return item.getValue() != null;
+                })
+                .filter((TreeItem<MatchResult> item) -> {
+                    return item.getValue().getFilepath().isPresent();
+                })
+                .map((TreeItem<MatchResult> item) -> {
+                    return item.getValue().getFilepath().get();
+                })
+                .collect(Collectors.toSet())
+            ;
+            paths.forEach((Path path) -> {
                 try
                 {
-                    Desktop.getDesktop().open(item.getValue().getFilepath().get().toFile());
+                    Desktop.getDesktop().open(path.toFile());
                 }
                 catch(Exception e)
                 {
                     logger.error("Couldnot open a file.", e);
                 }
             });
-        ;
+        });
     }
 
     @FXML
